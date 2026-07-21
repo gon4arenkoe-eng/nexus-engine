@@ -1,0 +1,25 @@
+# V10 NEXUS Swarm — Render.com
+services:
+  - type: web
+    name: superbot-v10
+    runtime: docker
+    plan: free
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: superbot-db
+          property: connectionString
+      - key: MASTER_KEY
+        generateValue: true
+      - key: ADMIN_SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+    healthCheckPath: /health
+
+databases:
+  - name: superbot-db
+    plan: free
+    ipAllowList: []
