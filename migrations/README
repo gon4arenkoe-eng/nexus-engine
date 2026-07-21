@@ -1,0 +1,17 @@
+Generic single-database configuration.
+
+## Использование
+
+```bash
+# Создать миграцию (автоматически)
+alembic revision --autogenerate -m "add users table"
+
+# Применить миграции
+alembic upgrade head
+
+# Откатить на 1 версию
+alembic downgrade -1
+
+# Показать историю
+alembic history --verbose
+```
