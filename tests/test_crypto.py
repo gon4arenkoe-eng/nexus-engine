@@ -2,12 +2,16 @@
 import pytest
 from utils.crypto_utils import CryptoManager
 
+
+
 def test_encrypt_decrypt():
     manager = CryptoManager("test-master-key-32-chars-long!!!")
     plaintext = "my-secret-api-key-12345"
     encrypted = manager.encrypt(plaintext)
     decrypted = manager.decrypt(encrypted)
     assert decrypted == plaintext
+
+
 
 def test_different_salts():
     manager = CryptoManager("test-master-key-32-chars-long!!!")
@@ -17,6 +21,8 @@ def test_different_salts():
     assert encrypted1 != encrypted2
     assert manager.decrypt(encrypted1) == plaintext
     assert manager.decrypt(encrypted2) == plaintext
+
+
 
 def test_invalid_key():
     manager1 = CryptoManager("correct-key-32-chars-long!!!")

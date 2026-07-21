@@ -25,14 +25,14 @@ class User(db.Model):
     def set_password(self, password: str) -> None:
         """Hash password with bcrypt."""
         self.password_hash = bcrypt.hashpw(
-            password.encode("utf-8"), 
+            password.encode("utf-8"),
             bcrypt.gensalt(rounds=12)
         ).decode("utf-8")
 
     def check_password(self, password: str) -> bool:
         """Verify password against hash."""
         return bcrypt.checkpw(
-            password.encode("utf-8"), 
+            password.encode("utf-8"),
             self.password_hash.encode("utf-8")
         )
 

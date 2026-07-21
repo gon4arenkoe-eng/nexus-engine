@@ -2,13 +2,9 @@
 V10 NEXUS Swarm — Base Exchange Client
 =======================================
 Абстрактный базовый класс для всех API клиентов бирж.
-Все клиенты используют aiohttp для асинхронных запросов.
 """
 
 import aiohttp
-import hmac
-import hashlib
-import time
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 import logging
@@ -17,18 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class BaseExchangeClient(ABC):
-    """
-    Abstract base class for exchange API clients.
+    """Abstract base class for exchange API clients."""
 
-    All exchange clients must implement:
-    - Authentication
-    - Market data fetching
-    - Order placement
-    - Position management
-    - Balance fetching
-    """
-
-    def __init__(self, api_key: str, api_secret: str, passphrase: Optional[str] = None,
+    def __init__(self, api_key: str, api_secret: str,
+                 passphrase: Optional[str] = None,
                  demo: bool = True, base_url: Optional[str] = None):
         self.api_key = api_key
         self.api_secret = api_secret
@@ -52,18 +40,15 @@ class BaseExchangeClient(ABC):
         return self._session
 
     @abstractmethod
-    def _sign_request(self, method: str, endpoint: str, params: Dict[str, Any]) -> Dict[str, str]:
+    def _sign_request(self, method: str, endpoint: str,
+                      params: Dict[str, Any]) -> Dict[str, str]:
         """Generate authentication headers for the request."""
         pass
 
-    async def _request(self, method: str, endpoint: str, params: Optional[Dict] = None,
+    async def _request(self, method: str, endpoint: str,
+                       params: Optional[Dict] = None,
                        signed: bool = False) -> Dict[str, Any]:
-        """
-        Make HTTP request to exchange API.
-
-        Returns:
-            Parsed JSON response or {"error": str}
-        """
+        """Make HTTP request to exchange API."""
         try:
             session = await self._get_session()
             url = f"{self.base_url}{endpoint}"
@@ -72,7 +57,8 @@ class BaseExchangeClient(ABC):
             if signed:
                 headers.update(self._sign_request(method, endpoint, params or {}))
 
-            async with session.request(method, url, params=params, headers=headers) as response:
+            async with session.request(method, url, params=params,
+                                       headers=headers) as response:
                 text = await response.text()
 
                 if response.status >= 400:
@@ -81,7 +67,7 @@ class BaseExchangeClient(ABC):
 
                 try:
                     return await response.json()
-                except:
+                except Exception:
                     return {"data": text}
 
         except aiohttp.ClientError as e:
@@ -93,7 +79,8 @@ class BaseExchangeClient(ABC):
 
     # === Market Data ===
     @abstractmethod
-    async def get_klines(self, symbol: str, interval: str, limit: int = 100) -> List[List]:
+    async def get_klines(self, symbol: str, interval: str,
+                         limit: int = 100) -> List[List]:
         """Fetch OHLCV candles."""
         pass
 
@@ -105,48 +92,27 @@ class BaseExchangeClient(ABC):
     # === Trading ===
     @abstractmethod
     async def place_order(self, symbol: str, side: str, size: float,
-                          order_type: str = "MARKET", price: Optional[float] = None,
+                          order_type: str = "MARKET",
+                          price: Optional[float] = None,
                           leverage: int = 1) -> Dict[str, Any]:
-        """
-        Place trading order.
-
-        Returns:
-            {
-                "order_id": str,
-                "avg_price": float,
-                "size": float,
-                "commission": float,
-                "status": str,
-            }
-            or {"error": str}
-        """
+        """Place trading order."""
         pass
 
     @abstractmethod
-    async def cancel_order(self, order_id: str, symbol: str) -> Dict[str, Any]:
+    async def cancel_order(self, order_id: str,
+                           symbol: str) -> Dict[str, Any]:
         """Cancel an open order."""
         pass
 
     # === Account ===
     @abstractmethod
     async def get_balance(self) -> Dict[str, Any]:
-        """
-        Fetch account balance.
-
-        Returns:
-            {"USDT": float, "BTC": float, ...}
-            or {"error": str}
-        """
+        """Fetch account balance."""
         pass
 
     @abstractmethod
     async def get_positions(self) -> Optional[List[Dict[str, Any]]]:
-        """
-        Fetch open positions.
-
-        Returns:
-            List of position dicts or None
-        """
+        """Fetch open positions."""
         pass
 
     async def close(self):

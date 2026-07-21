@@ -1,8 +1,7 @@
 """
 V10 NEXUS Swarm — Auth Service
 ===============================
-Сервис аутентификации.
-JWT токены хранятся в httpOnly Secure cookies (НЕ localStorage).
+JWT в httpOnly Secure cookies.
 """
 
 import os
@@ -10,36 +9,28 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional, Tuple
 from functools import wraps
-from flask import request, make_response
+from flask import request
 
 from models import User
 from app import db
 
 
 class AuthService:
-    """
-    Authentication service.
-
-    Security:
-    - JWT in httpOnly Secure cookies (XSS protection)
-    - bcrypt password hashing (12 rounds)
-    - Token expiration (access: 15min, refresh: 7 days)
-    """
+    """Authentication service with JWT in httpOnly Secure cookies."""
 
     def __init__(self, secret_key: str):
         self.secret_key = secret_key
         self.access_token_expiry = timedelta(minutes=15)
         self.refresh_token_expiry = timedelta(days=7)
 
-    def register(self, username: str, email: str, password: str) -> Tuple[bool, str]:
-        """Register new user. Returns (success, message)."""
-        # Check existing
+    def register(self, username: str, email: str,
+                 password: str) -> Tuple[bool, str]:
+        """Register new user."""
         if User.query.filter_by(username=username).first():
             return False, "Username already exists"
         if User.query.filter_by(email=email).first():
             return False, "Email already exists"
 
-        # Create user
         user = User(username=username, email=email)
         user.set_password(password)
 
@@ -49,18 +40,12 @@ class AuthService:
         return True, "User registered successfully"
 
     def login(self, username: str, password: str) -> Tuple[Optional[User], Optional[Dict]]:
-        """
-        Authenticate user and generate tokens.
-
-        Returns:
-            (user, tokens_dict) or (None, None) if failed
-        """
+        """Authenticate user and generate tokens."""
         user = User.query.filter_by(username=username).first()
 
         if not user or not user.check_password(password):
             return None, None
 
-        # Update last login
         user.last_login = datetime.utcnow()
         db.session.commit()
 
@@ -70,7 +55,8 @@ class AuthService:
     def refresh_access_token(self, refresh_token: str) -> Optional[Dict]:
         """Generate new access token from refresh token."""
         try:
-            payload = jwt.decode(refresh_token, self.secret_key, algorithms=["HS256"])
+            payload = jwt.decode(refresh_token, self.secret_key,
+                                algorithms=["HS256"])
             user_id = payload.get("user_id")
             token_type = payload.get("type")
 
@@ -132,8 +118,10 @@ class AuthService:
         }
 
         return {
-            "access_token": jwt.encode(access_payload, self.secret_key, algorithm="HS256"),
-            "refresh_token": jwt.encode(refresh_payload, self.secret_key, algorithm="HS256"),
+            "access_token": jwt.encode(access_payload, self.secret_key,
+                                       algorithm="HS256"),
+            "refresh_token": jwt.encode(refresh_payload, self.secret_key,
+                                         algorithm="HS256"),
         }
 
     def set_auth_cookies(self, response, tokens: Dict[str, str]) -> None:
@@ -142,7 +130,7 @@ class AuthService:
             "access_token",
             tokens["access_token"],
             httponly=True,
-            secure=True,  # HTTPS only
+            secure=True,
             samesite="Lax",
             max_age=int(self.access_token_expiry.total_seconds()),
         )
@@ -171,14 +159,12 @@ def require_auth(f):
         if not token:
             return jsonify({"error": "Authentication required"}), 401
 
-        # Verify token
         auth_service = AuthService(os.environ.get("SECRET_KEY", ""))
         payload = auth_service.verify_token(token)
 
         if not payload:
             return jsonify({"error": "Invalid or expired token"}), 401
 
-        # Attach user to request
         request.current_user = User.query.get(payload["user_id"])
         if not request.current_user:
             return jsonify({"error": "User not found"}), 401

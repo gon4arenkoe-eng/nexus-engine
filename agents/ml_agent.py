@@ -1,87 +1,76 @@
 """
 V10 NEXUS Swarm — ML Agent
-============================
+===========================
 ML-фильтр для торговых сигналов.
-
-СТАТУС: Заглушка (Stub). Реальный XGBoost будет интегрирован позже.
-
-План интеграции:
-1. Собрать исторические данные (минимум 10,000 свечей)
-2. Обучить XGBoost на признаках: EMA, RSI, MACD, Volume, ATR
-3. Сохранить модель в models/ml/
-4. Заменить заглушку на реальный инференс
+Сейчас — интерфейс с заглушкой (эвристики).
+Будущее: XGBoost инференс.
 """
 
-from typing import Dict, Any, Optional
+import logging
+from typing import Dict, Any
+
+import pandas as pd
+
 from agents.base_agent import BaseAgent
+
+logger = logging.getLogger(__name__)
 
 
 class MLAgent(BaseAgent):
     """
-    Machine Learning filter for trading signals.
-
-    Current: Stub — always returns True (pass-through)
-    Future: XGBoost model inference
+    ML Filter Agent.
+    Currently uses heuristics. Future: XGBoost model inference.
     """
 
     def __init__(self):
         super().__init__("ml")
         self._model_loaded = False
-        self._model = None
-        self._feature_columns = [
-            "ema_9", "ema_21", "rsi_14", "macd", 
-            "macd_signal", "volume_sma", "atr_14"
-        ]
 
-    def run(self, signal: Dict[str, Any], 
-            market_data: Dict[str, Any]) -> bool:
+    def run(self, signal: Dict[str, Any], market_data: pd.DataFrame) -> bool:
         """
-        Filter signal using ML model.
+        Filter signal through ML model.
 
         Returns:
-            True if signal passes ML filter, False otherwise
+            True if signal passes ML filter, False otherwise.
         """
         try:
-            self._record_run()
+            # TODO: Load and run XGBoost model
+            # For now, use heuristics based on market conditions
 
-            # If ML is not enabled in settings, pass through
-            if not self._model_loaded:
+            confidence = signal.get("confidence", 0)
+
+            # Simple heuristic: high confidence signals pass
+            if confidence >= 70:
+                self._record_run()
                 return True
 
-            # TODO: Implement real XGBoost inference
-            # features = self._extract_features(market_data)
-            # prediction = self._model.predict(features)
-            # return prediction > 0.5
+            # Check market volatility (using ATR proxy)
+            if len(market_data) >= 20:
+                recent = market_data.tail(20)
+                volatility = ((recent["high"] - recent["low"]) / recent["close"]).mean()
 
-            return True
+                # Low volatility + high confidence = pass
+                if volatility < 0.02 and confidence >= 60:
+                    self._record_run()
+                    return True
+
+            self._record_run()
+            return False
 
         except Exception as e:
             self._handle_error(e)
-            # Fail-safe: if ML fails, allow signal (conservative)
+            # Fail open — allow signal if ML fails
             return True
 
     def load_model(self, model_path: str) -> bool:
-        """Load trained XGBoost model."""
+        """Load XGBoost model from file."""
         try:
-            import xgboost as xgb
-            self._model = xgb.Booster()
-            self._model.load_model(model_path)
-            self._model_loaded = True
-            self._set_status("active")
-            return True
-        except ImportError:
-            self._set_status("error")
+            # import xgboost as xgb
+            # self._model = xgb.Booster()
+            # self._model.load_model(model_path)
+            # self._model_loaded = True
+            logger.info(f"ML model loading not yet implemented. Path: {model_path}")
             return False
         except Exception as e:
             self._handle_error(e)
             return False
-
-    def _extract_features(self, market_data: Dict) -> list:
-        """Extract features from market data for model inference."""
-        # TODO: Implement feature extraction
-        candles = market_data.get("candles", [])
-        if len(candles) < 50:
-            return [0.0] * len(self._feature_columns)
-
-        # Placeholder
-        return [0.5] * len(self._feature_columns)

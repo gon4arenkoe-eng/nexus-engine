@@ -70,7 +70,7 @@ class ExchangeService:
                 "error": None,
             }
 
-        except Exception as e:
+        except Exception:
             db.session.rollback()
             return {"success": False, "error": str(e)}
 

@@ -2,39 +2,29 @@
 V10 NEXUS Swarm — Config Agent
 ==============================
 Управление конфигурацией системы.
-Читает/пишет настройки из БД. Централизованный доступ.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from agents.base_agent import BaseAgent
-from models import BotSettings, User
+from models import BotSettings
 from app import db
 
 
 class ConfigAgent(BaseAgent):
-    """
-    Manages all configuration parameters:
-    - User settings
-    - Exchange settings
-    - Strategy parameters
-    - Risk parameters
-    """
+    """Manages all configuration parameters."""
 
     def __init__(self):
         super().__init__("config")
-        self._cache: Dict[int, Dict[str, Any]] = {}  # user_id -> settings cache
+        self._cache: Dict[int, Dict[str, Any]] = {}
 
     def run(self, user_id: int) -> Dict[str, Any]:
         """Get full configuration for a user."""
         try:
-            # Check cache first
             if user_id in self._cache:
                 return self._cache[user_id]
 
-            # Load from database
             settings = BotSettings.query.filter_by(user_id=user_id).first()
             if not settings:
-                # Create default settings
                 settings = BotSettings(user_id=user_id)
                 db.session.add(settings)
                 db.session.commit()
@@ -63,7 +53,6 @@ class ConfigAgent(BaseAgent):
             if hasattr(settings, key):
                 setattr(settings, key, value)
                 db.session.commit()
-                # Invalidate cache
                 self._cache.pop(user_id, None)
                 self._record_run()
                 return True

@@ -1,8 +1,7 @@
 """
 V10 NEXUS Swarm — Signal Agent
-==============================
-Генерация торговых сигналов через StrategyManager.
-Поддерживает несколько стратегий, переключаемых через конфиг.
+================================
+Генерация торговых сигналов.
 """
 
 import logging
@@ -18,14 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class SignalAgent(BaseAgent):
-    """
-    Generates trading signals by running configured strategies on market data.
-
-    Strategies:
-    - ema_cross: EMA crossover (trend following)
-    - mean_reversion: RSI + Bollinger (range trading)
-    - grid: Grid trading (planned)
-    """
+    """Generates trading signals using configured strategies."""
 
     def __init__(self):
         super().__init__("signal")
@@ -34,20 +26,9 @@ class SignalAgent(BaseAgent):
             "mean_reversion": MeanReversionStrategy(),
         }
 
-    def run(self, market_data: pd.DataFrame, strategy_name: str = "ema_cross", 
+    def run(self, market_data: pd.DataFrame, strategy_name: str = "ema_cross",
             confidence_threshold: int = 50) -> Optional[Dict[str, Any]]:
-        """
-        Generate trading signal from market data.
-
-        Returns:
-            {
-                "signal": "BUY" | "SELL" | "NEUTRAL",
-                "confidence": int (0-100),
-                "strategy": str,
-                "metadata": dict,  # indicators, levels, etc.
-            }
-            or None if error
-        """
+        """Generate trading signal from market data."""
         try:
             strategy = self._strategies.get(strategy_name)
             if not strategy:
@@ -57,10 +38,8 @@ class SignalAgent(BaseAgent):
                 logger.warning("Insufficient market data for signal generation")
                 return None
 
-            # Run strategy
             result = strategy.analyze(market_data)
 
-            # Filter by confidence
             if result["confidence"] < confidence_threshold:
                 result["signal"] = "NEUTRAL"
 

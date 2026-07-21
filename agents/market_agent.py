@@ -2,14 +2,10 @@
 V10 NEXUS Swarm — Market Agent
 ==============================
 Сбор рыночных данных через асинхронные HTTP запросы (aiohttp).
-Кэширование, нормализация, унифицированный интерфейс.
-
-Ключевое улучшение: вместо блокирующих requests.get() — aiohttp.
 """
 
-import asyncio
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 
 import aiohttp
@@ -21,19 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 class MarketAgent(BaseAgent):
-    """
-    Fetches and caches market data from exchanges.
-
-    Supports:
-    - Klines/candles (OHLCV)
-    - Ticker prices
-    - Order books (optional)
-    """
+    """Fetches and caches market data from exchanges."""
 
     def __init__(self):
         super().__init__("market")
-        self._cache: Dict[str, Any] = {}  # symbol_timeframe -> data
-        self._cache_ttl = 60  # seconds
+        self._cache: Dict[str, Any] = {}
+        self._cache_ttl = 60
         self._session: Optional[aiohttp.ClientSession] = None
 
     async def _get_session(self) -> aiohttp.ClientSession:
@@ -45,16 +34,11 @@ class MarketAgent(BaseAgent):
             )
         return self._session
 
-    async def run(self, symbol: str, timeframe: str, exchange: str = "bingx", limit: int = 100) -> Optional[pd.DataFrame]:
-        """
-        Fetch OHLCV candles for a symbol.
-
-        Returns:
-            DataFrame with columns: timestamp, open, high, low, close, volume
-        """
+    async def run(self, symbol: str, timeframe: str,
+                  exchange: str = "bingx", limit: int = 100) -> Optional[pd.DataFrame]:
+        """Fetch OHLCV candles for a symbol."""
         cache_key = f"{exchange}:{symbol}:{timeframe}"
 
-        # Check cache
         if cache_key in self._cache:
             cached = self._cache[cache_key]
             if datetime.utcnow() - cached["timestamp"] < timedelta(seconds=self._cache_ttl):
@@ -62,7 +46,6 @@ class MarketAgent(BaseAgent):
                 return cached["data"]
 
         try:
-            # Fetch from exchange
             if exchange == "bingx":
                 data = await self._fetch_bingx_klines(symbol, timeframe, limit)
             elif exchange == "binance":
@@ -74,10 +57,8 @@ class MarketAgent(BaseAgent):
                 logger.warning(f"No data returned for {symbol} {timeframe}")
                 return None
 
-            # Normalize to DataFrame
             df = self._normalize_ohlcv(data, exchange)
 
-            # Cache result
             self._cache[cache_key] = {
                 "data": df,
                 "timestamp": datetime.utcnow(),
@@ -90,11 +71,11 @@ class MarketAgent(BaseAgent):
             self._handle_error(e)
             return None
 
-    async def _fetch_bingx_klines(self, symbol: str, timeframe: str, limit: int) -> List[List]:
+    async def _fetch_bingx_klines(self, symbol: str,
+                                  timeframe: str, limit: int) -> List[List]:
         """Fetch klines from BingX API."""
         session = await self._get_session()
 
-        # BingX API endpoint
         url = "https://open-api.bingx.com/openApi/swap/v2/quote/klines"
         params = {
             "symbol": symbol,
@@ -110,7 +91,8 @@ class MarketAgent(BaseAgent):
             result = await response.json()
             return result.get("data", [])
 
-    async def _fetch_binance_klines(self, symbol: str, timeframe: str, limit: int) -> List[List]:
+    async def _fetch_binance_klines(self, symbol: str,
+                                      timeframe: str, limit: int) -> List[List]:
         """Fetch klines from Binance API."""
         session = await self._get_session()
 
@@ -131,20 +113,17 @@ class MarketAgent(BaseAgent):
     def _normalize_ohlcv(self, data: List[List], exchange: str) -> pd.DataFrame:
         """Normalize exchange-specific format to standard DataFrame."""
         if exchange == "bingx":
-            # BingX format: [[openTime, open, high, low, close, volume, ...], ...]
             df = pd.DataFrame(data, columns=[
                 "timestamp", "open", "high", "low", "close", "volume",
                 "quote_volume", "taker_buy_volume", "taker_buy_quote", "ignore"
             ])
         else:
-            # Binance format: [[openTime, open, high, low, close, volume, closeTime, ...], ...]
             df = pd.DataFrame(data, columns=[
                 "timestamp", "open", "high", "low", "close", "volume",
                 "close_time", "quote_volume", "trades", "taker_buy_volume",
                 "taker_buy_quote", "ignore"
             ])
 
-        # Convert types
         numeric_cols = ["open", "high", "low", "close", "volume"]
         for col in numeric_cols:
             df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -156,7 +135,6 @@ class MarketAgent(BaseAgent):
 
     def _convert_timeframe(self, tf: str) -> str:
         """Convert timeframe to exchange-specific format."""
-        # BingX uses same format as Binance for most timeframes
         mapping = {
             "1m": "1m", "3m": "3m", "5m": "5m", "15m": "15m", "30m": "30m",
             "1h": "1h", "2h": "2h", "4h": "4h", "6h": "6h", "8h": "8h",
@@ -164,7 +142,8 @@ class MarketAgent(BaseAgent):
         }
         return mapping.get(tf, tf)
 
-    async def get_current_price(self, symbol: str, exchange: str = "bingx") -> Optional[float]:
+    async def get_current_price(self, symbol: str,
+                                exchange: str = "bingx") -> Optional[float]:
         """Get current market price."""
         try:
             session = await self._get_session()

@@ -2,7 +2,6 @@
 V10 NEXUS Swarm — Position Agent
 =================================
 Управление открытыми позициями.
-Синхронизация с биржей, обновление статусов.
 """
 
 import logging
@@ -17,57 +16,41 @@ logger = logging.getLogger(__name__)
 
 
 class PositionAgent(BaseAgent):
-    """
-    Tracks and manages open positions.
-
-    Responsibilities:
-    - Sync positions with exchange
-    - Update unrealized PnL
-    - Track position status
-    """
+    """Tracks and manages open positions."""
 
     def __init__(self):
         super().__init__("position")
 
-    async def run(self, user_id: int, exchange_id: int, 
-                  client: BaseExchangeClient) -> List[Dict[str, Any]]:
-        """
-        Sync positions with exchange and return current positions.
-
-        Returns:
-            List of position dicts
-        """
+    async def run(self, user_id: int, exchange_id: int,
+                  client: Optional[BaseExchangeClient]) -> List[Dict[str, Any]]:
+        """Sync positions with exchange and return current positions."""
         try:
-            # Fetch positions from exchange
-            exchange_positions = await client.get_positions()
+            if client:
+                exchange_positions = await client.get_positions()
 
-            if exchange_positions is None:
-                logger.warning("Failed to fetch positions from exchange")
-                # Return local positions as fallback
-                return self._get_local_positions(user_id)
+                if exchange_positions is not None:
+                    positions = []
+                    for pos_data in exchange_positions:
+                        position = self._sync_position(user_id, exchange_id, pos_data)
+                        if position:
+                            positions.append(position.to_dict())
 
-            # Sync with local database
-            positions = []
-            for pos_data in exchange_positions:
-                position = self._sync_position(user_id, exchange_id, pos_data)
-                if position:
-                    positions.append(position.to_dict())
+                    self._record_run()
+                    return positions
 
-            self._record_run()
-            return positions
+            return self._get_local_positions(user_id)
 
         except Exception as e:
             self._handle_error(e)
             return self._get_local_positions(user_id)
 
-    def _sync_position(self, user_id: int, exchange_id: int, 
+    def _sync_position(self, user_id: int, exchange_id: int,
                        pos_data: Dict[str, Any]) -> Optional[Position]:
         """Sync single position with database."""
         symbol = pos_data.get("symbol")
         if not symbol:
             return None
 
-        # Find existing position
         position = Position.query.filter_by(
             user_id=user_id,
             exchange_id=exchange_id,
@@ -76,11 +59,9 @@ class PositionAgent(BaseAgent):
         ).first()
 
         if position:
-            # Update existing
             position.size = Decimal(str(pos_data.get("size", 0)))
             position.unrealized_pnl = Decimal(str(pos_data.get("unrealized_pnl", 0)))
         else:
-            # Create new if exchange has position we don't track
             if float(pos_data.get("size", 0)) > 0:
                 position = Position(
                     user_id=user_id,
@@ -101,13 +82,11 @@ class PositionAgent(BaseAgent):
 
     def _get_local_positions(self, user_id: int) -> List[Dict[str, Any]]:
         """Get positions from local database (fallback)."""
-        positions = Position.query.filter_by(
-            user_id=user_id,
-            status="OPEN"
-        ).all()
+        positions = Position.query.filter_by(user_id=user_id, status="OPEN").all()
         return [p.to_dict() for p in positions]
 
-    def update_unrealized_pnl(self, position_id: int, current_price: float) -> Optional[Decimal]:
+    def update_unrealized_pnl(self, position_id: int,
+                              current_price: float) -> Optional[Decimal]:
         """Update unrealized PnL for a position."""
         try:
             position = Position.query.get(position_id)

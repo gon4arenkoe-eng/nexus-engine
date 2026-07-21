@@ -180,7 +180,7 @@ class BingXClient(BaseExchangeClient):
 
         return positions
 
-    async def get_income(self, start_time: Optional[int] = None, 
+    async def get_income(self, start_time: Optional[int] = None,
                          end_time: Optional[int] = None, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Fetch income history (for PnL calculation).

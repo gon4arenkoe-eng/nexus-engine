@@ -6,7 +6,7 @@ V10 NEXUS Swarm — Trading Service
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 from datetime import datetime
 
 from agents.config_agent import ConfigAgent
@@ -21,7 +21,7 @@ from agents.sentiment_agent import SentimentAgent
 from agents.notification_agent import NotificationAgent
 
 from services.exchange_service import ExchangeService
-from models import BotSettings, Exchange
+from models import BotSettings
 
 logger = logging.getLogger(__name__)
 

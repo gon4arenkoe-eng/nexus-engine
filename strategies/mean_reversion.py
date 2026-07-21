@@ -8,7 +8,6 @@ V10 NEXUS Swarm — Mean Reversion Strategy
 """
 
 import pandas as pd
-import numpy as np
 from typing import Dict, Any
 
 from strategies.base import BaseStrategy

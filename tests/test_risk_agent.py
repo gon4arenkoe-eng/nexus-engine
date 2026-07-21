@@ -6,11 +6,15 @@ from agents.risk_agent import RiskAgent
 def risk_agent():
     return RiskAgent()
 
+
+
 def test_approve_valid(risk_agent):
     signal = {"signal": "BUY", "confidence": 75, "metadata": {"symbol": "BTCUSDT", "current_price": 65000}}
     result = risk_agent.run(signal=signal, user_id=1, balance=10000, open_positions=[])
     assert result["approved"] is True
     assert result["position_size"] > 0
+
+
 
 def test_reject_max_positions(risk_agent):
     signal = {"signal": "BUY", "confidence": 75, "metadata": {"symbol": "ETHUSDT", "current_price": 3500}}
@@ -22,6 +26,8 @@ def test_reject_max_positions(risk_agent):
     result = risk_agent.run(signal=signal, user_id=1, balance=10000, open_positions=open_positions)
     assert result["approved"] is False
     assert "Max positions" in result["reason"]
+
+
 
 def test_reject_duplicate(risk_agent):
     signal = {"signal": "BUY", "confidence": 75, "metadata": {"symbol": "BTCUSDT", "current_price": 65000}}
