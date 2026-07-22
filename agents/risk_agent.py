@@ -5,7 +5,7 @@ V10 NEXUS Swarm — Risk Agent
 """
 
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -24,7 +24,7 @@ class RiskAgent(BaseAgent):
         self._last_pnl_update: Dict[int, datetime] = {}
 
     def run(self, signal: Dict[str, Any], user_id: int,
-            balance: float = 0, open_positions: List[Dict] = None) -> Dict[str, Any]:
+            balance: float = 0, open_positions: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """Evaluate signal against risk rules."""
         try:
             settings = BotSettings.query.filter_by(user_id=user_id).first()
