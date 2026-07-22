@@ -10,8 +10,9 @@ def risk_agent():
     return RiskAgent()
 
 
+@patch("agents.risk_agent.TradeHistory")
 @patch("agents.risk_agent.BotSettings")
-def test_approve_valid(mock_settings, risk_agent):
+def test_approve_valid(mock_settings, mock_trade_history, risk_agent):
     """Test approval of valid signal."""
     mock_settings.query.filter_by.return_value.first.return_value = MagicMock(
         max_positions=10,
@@ -19,6 +20,7 @@ def test_approve_valid(mock_settings, risk_agent):
         daily_loss_limit=500,
         position_size_pct=10,
     )
+    mock_trade_history.query.filter.return_value.all.return_value = []
     signal = {
         "signal": "BUY",
         "confidence": 75,
