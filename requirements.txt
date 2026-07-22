@@ -44,3 +44,8 @@ mypy==1.10.1
 requests==2.32.3
 python-dateutil==2.9.0
 pydantic==2.8.2
+
+echo "pytest-timeout>=2.3.0" >> requirements.txt
+git add requirements.txt
+git commit -m "fix: add pytest-timeout to catch hanging tests"
+git push origin main
