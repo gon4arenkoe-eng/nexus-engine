@@ -6,7 +6,7 @@ V10 NEXUS Swarm — Trading Service
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional, cast
+from typing import Dict, Any, cast
 from datetime import datetime
 
 from agents.config_agent import ConfigAgent
