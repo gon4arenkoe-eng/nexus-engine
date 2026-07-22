@@ -7,7 +7,7 @@ V10 NEXUS Swarm — Base Agent
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class BaseAgent(ABC):
     def __init__(self, name: str):
         self.name = name
         self._status = "initialized"
-        self._last_run = None
+        self._last_run: Optional[datetime] = None
         self._error_count = 0
         self._run_count = 0
 
