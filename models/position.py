@@ -4,7 +4,7 @@ from datetime import datetime
 from app import db
 
 
-class Position(db.Model):
+class Position(db.Model):  # type: ignore[name-defined]
     __tablename__ = "positions"
 
     id = db.Column(db.Integer, primary_key=True)
