@@ -25,8 +25,8 @@ def test_different_salts():
 
 def test_invalid_key():
     """Test decryption with wrong key fails."""
-    manager1 = CryptoManager("correct-key-32-chars-long!!!")
-    manager2 = CryptoManager("wrong-key-32-chars-long!!!!")
+    manager1 = CryptoManager("test-master-key-32-chars-long!!!")
+    manager2 = CryptoManager("wrong-key-32-chars-long!!!!!!")
     encrypted = manager1.encrypt("secret")
     with pytest.raises(Exception):
         manager2.decrypt(encrypted)
