@@ -4,7 +4,7 @@ from datetime import datetime
 from app import db
 
 
-class Exchange(db.Model):
+class Exchange(db.Model):  # type: ignore[name-defined]
     __tablename__ = "exchanges"
 
     id = db.Column(db.Integer, primary_key=True)
