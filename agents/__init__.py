@@ -10,7 +10,7 @@ from .pnl_agent import PnLAgent
 from .ml_agent import MLAgent
 from .sentiment_agent import SentimentAgent
 from .notification_agent import NotificationAgent
-from .orchestrator import SwarmOrchestrator
+from .orchestrator import Orchestrator
 
 __all__ = [
     "BaseAgent",
@@ -24,5 +24,5 @@ __all__ = [
     "MLAgent",
     "SentimentAgent",
     "NotificationAgent",
-    "SwarmOrchestrator",
+    "Orchestrator",
 ]
