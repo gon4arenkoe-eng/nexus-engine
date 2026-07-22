@@ -37,12 +37,8 @@ jobs:
       - run: safety check --json --output safety-report.json || true
       - run: flake8 . --max-line-length=120 --exclude=migrations,venv,__pycache__
       - run: mypy . --ignore-missing-imports
-     #- run: pytest --cov=agents --cov=services --cov=clients --cov=strategies --cov-report=xml --cov-report=term
+      - run: pytest --cov=agents --cov=services --cov=clients --cov=strategies --cov-report=term
         env:
           SECRET_KEY: test-secret-key-32-chars-long!!!
           DATABASE_URL: postgresql://test:test@localhost:5432/test_db
           MASTER_KEY: test-master-key-64-hex-chars-long-1234567890123456
-      - uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: true
