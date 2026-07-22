@@ -7,7 +7,7 @@ V10 NEXUS Swarm — Orchestrator
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional, cast
+from typing import Dict, Any, cast
 from datetime import datetime
 
 from agents.base_agent import BaseAgent
