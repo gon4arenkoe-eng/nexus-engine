@@ -37,7 +37,7 @@ jobs:
       - run: safety check --json --output safety-report.json || true
       - run: flake8 . --max-line-length=120 --exclude=migrations,venv,__pycache__
       - run: mypy . --ignore-missing-imports
-      - run: pytest tests/test_crypto.py -v
+      - run: pytest tests/test_crypto.py tests/test_risk_agent.py -v
         env:
           SECRET_KEY: test-secret-key-32-chars-long!!!
           DATABASE_URL: postgresql://test:test@localhost:5432/test_db
