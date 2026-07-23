@@ -1,59 +1,30 @@
-"""
-V10 NEXUS Swarm — Base Strategy
-================================
-Интерфейс для всех торговых стратегий.
-Каждая стратегия реализует analyze() и возвращает сигнал.
-"""
-
-from abc import ABC, abstractmethod
-from typing import Dict, Any
 import pandas as pd
+from typing import Dict, Any
 
+class BaseStrategy:
+    """Base class for all trading strategies."""
 
-class BaseStrategy(ABC):
-    """
-    Base class for all trading strategies.
+    description: str = "Base Strategy"
 
-    Each strategy must implement:
-    - analyze(): Analyze market data and return signal
-    - get_parameters(): Return configurable parameters
-    """
+    def analyze(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """Analyzes market data and returns a trading signal."""
+        raise NotImplementedError
 
-    description: str = "Base strategy"
-
-    @abstractmethod
-    def analyze(self, data: pd.DataFrame) -> Dict[str, Any]:
-        """
-        Analyze market data and generate trading signal.
-
-        Args:
-            data: DataFrame with OHLCV columns (open, high, low, close, volume)
-
-        Returns:
-            {
-                "signal": "BUY" | "SELL" | "NEUTRAL",
-                "confidence": int (0-100),
-                "strategy": str,
-                "metadata": {
-                    "symbol": str,
-                    "current_price": float,
-                    "indicators": dict,
-                    "levels": dict,  # SL, TP, etc.
-                }
-            }
-        """
-        pass
-
-    @abstractmethod
-    def get_parameters(self) -> Dict[str, Any]:
-        """Return strategy parameters for configuration."""
-        pass
-
-    def _validate_data(self, data: pd.DataFrame, min_rows: int = 50) -> bool:
-        """Validate that data has required columns and enough rows."""
-        required = ["open", "high", "low", "close", "volume"]
-        if not all(col in data.columns for col in required):
-            return False
-        if len(data) < min_rows:
+    def _validate_data(self, data: pd.DataFrame, min_rows: int) -> bool:
+        """Helper to validate if enough data is available."""
+        if data is None or data.empty or len(data) < min_rows:
             return False
         return True
+
+    def _neutral(self, reason: str, strategy_name: str) -> Dict[str, Any]:
+        """Returns a neutral signal."""
+        return {
+            "signal": "NEUTRAL",
+            "confidence": 0,
+            "strategy": strategy_name,
+            "metadata": {"reason": reason},
+        }
+
+    def get_parameters(self) -> Dict[str, Any]:
+        """Returns strategy parameters for configuration."""
+        return {}

@@ -1,12 +1,6 @@
-"""
-V10 NEXUS Swarm — Trading Service
-==================================
-Координирует агентов для полного торгового цикла.
-"""
-
 import asyncio
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, cast
 from datetime import datetime
 
 from agents.config_agent import ConfigAgent
@@ -19,12 +13,12 @@ from agents.pnl_agent import PnLAgent
 from agents.ml_agent import MLAgent
 from agents.sentiment_agent import SentimentAgent
 from agents.notification_agent import NotificationAgent
+from agents.market_regime_agent import MarketRegimeAgent # New import
 
 from services.exchange_service import ExchangeService
 from models import BotSettings
 
 logger = logging.getLogger(__name__)
-
 
 class TradingService:
     """Orchestrates complete trading cycle."""
@@ -41,11 +35,12 @@ class TradingService:
         self.sentiment_agent = SentimentAgent()
         self.notification_agent = NotificationAgent()
         self.exchange_service = ExchangeService()
+        self.market_regime_agent = MarketRegimeAgent() # Initialize new agent
 
     async def run_cycle(self, user_id: int, exchange_id: int) -> Dict[str, Any]:
         """Execute one trading cycle."""
         start_time = datetime.utcnow()
-        results = {
+        results: Dict[str, Any] = {
             "user_id": user_id,
             "exchange_id": exchange_id,
             "timestamp": start_time.isoformat(),
@@ -54,15 +49,17 @@ class TradingService:
         }
 
         try:
-            config = self.config_agent.run(user_id)
-            results["steps"]["config"] = {
+            config_raw = self.config_agent.run(user_id)
+            config = cast(Dict[str, Any], config_raw)
+            steps = cast(Dict[str, Any], results["steps"])
+            steps["config"] = {
                 "status": "ok",
                 "symbols": config.get("symbols", [])
             }
 
             client = await self.exchange_service.get_client(exchange_id)
             if not client:
-                results["steps"]["exchange"] = {
+                steps["exchange"] = {
                     "status": "error",
                     "message": "Failed to initialize client"
                 }
@@ -79,14 +76,21 @@ class TradingService:
                 *market_tasks, return_exceptions=True
             )
 
-            signals_executed = []
-            for symbol, market_data in zip(symbols, market_data_list):
-                if isinstance(market_data, Exception) or market_data is None:
+            signals_executed: list[Dict[str, Any]] = []
+            for i, symbol in enumerate(symbols):
+                market_data = market_data_list[i]
+                if isinstance(market_data, Exception) or market_data is None or market_data.empty:
+                    logger.warning(f"TradingService: Skipping {symbol} due to missing or erroneous market data.")
                     continue
 
-                signal = self.signal_agent.run(
+                # Run MarketRegimeAgent for each symbol
+                await self.market_regime_agent.run(symbol, market_data)
+
+                # SignalAgent will now use the market regime from Nexus Bus
+                signal = await self.signal_agent.run(
+                    symbol,
                     market_data,
-                    strategy_name=config.get("strategy", "ema_cross"),
+                    strategy_name=config.get("strategy"), # Let SignalAgent decide based on regime
                     confidence_threshold=config.get(
                         "confidence_threshold", 50
                     )
@@ -144,7 +148,7 @@ class TradingService:
                         price=order.get("price", 0)
                     )
 
-            results["steps"]["signals"] = {
+            steps["signals"] = {
                 "status": "ok",
                 "count": len(signals_executed),
                 "executed": signals_executed
@@ -155,8 +159,8 @@ class TradingService:
             )
             pnl = self.pnl_agent.run(user_id, positions)
 
-            results["steps"]["positions"] = {"status": "ok", "count": len(positions)}
-            results["steps"]["pnl"] = {
+            steps["positions"] = {"status": "ok", "count": len(positions)}
+            steps["pnl"] = {
                 "status": "ok",
                 "daily_pnl": float(pnl) if pnl else 0
             }
@@ -164,7 +168,8 @@ class TradingService:
 
         except Exception as e:
             logger.error("Trading cycle error: %s", e, exc_info=True)
-            results["steps"]["error"] = str(e)
+            steps = cast(Dict[str, Any], results["steps"])
+            steps["error"] = str(e)
 
         return results
 
@@ -196,7 +201,7 @@ class TradingService:
         if not settings:
             return {"error": "No settings found"}
 
-        agents_health = {
+        agents_health: Dict[str, Any] = {
             "config": self.config_agent.health_check(),
             "market": self.market_agent.health_check(),
             "signal": self.signal_agent.health_check(),
