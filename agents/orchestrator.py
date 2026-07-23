@@ -7,7 +7,7 @@ V10 NEXUS Swarm — Orchestrator
 
 import asyncio
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, cast
 from datetime import datetime
 
 from agents.base_agent import BaseAgent
@@ -63,7 +63,7 @@ class Orchestrator(BaseAgent):
         if not self.agents:
             self.initialize_default_agents()
 
-        results = {
+        results: Dict[str, Any] = {
             "timestamp": datetime.utcnow().isoformat(),
             "user_id": user_id,
             "exchange_id": exchange_id,
@@ -73,13 +73,15 @@ class Orchestrator(BaseAgent):
 
         try:
             # Step 1: Configuration
-            config = self.agents["config"].run(user_id)
-            results["steps"]["config"] = {"status": "ok", "symbols": config.get("symbols", [])}
+            config_result = self.agents["config"].run(user_id)
+            config = cast(Dict[str, Any], config_result)
+            steps = cast(Dict[str, Any], results["steps"])
+            steps["config"] = {"status": "ok", "symbols": config.get("symbols", [])}
 
             # Step 2: Get exchange client
             client = await self.exchange_service.get_client(exchange_id)
             if not client:
-                results["steps"]["exchange"] = {"status": "error", "message": "Failed to initialize client"}
+                steps["exchange"] = {"status": "error", "message": "Failed to initialize client"}
                 return results
 
             # Step 3: Fetch market data
@@ -93,7 +95,7 @@ class Orchestrator(BaseAgent):
             market_data_list = await asyncio.gather(*market_tasks, return_exceptions=True)
 
             # Step 4: Process signals
-            signals_executed = []
+            signals_executed: list[Dict[str, Any]] = []
             for symbol, market_data in zip(symbols, market_data_list):
                 if isinstance(market_data, Exception) or market_data is None:
                     continue
@@ -143,15 +145,17 @@ class Orchestrator(BaseAgent):
                         "order_id": order.get("order_id")
                     })
 
-                    await self.agents["notification"].send_trade_notification(
-                        user_id=user_id,
-                        symbol=symbol,
-                        side=signal["signal"],
-                        size=order.get("size", 0),
-                        price=order.get("price", 0)
-                    )
+                    notification_agent = self.agents["notification"]
+                    if hasattr(notification_agent, 'send_trade_notification'):
+                        await notification_agent.send_trade_notification(
+                            user_id=user_id,
+                            symbol=symbol,
+                            side=signal["signal"],
+                            size=order.get("size", 0),
+                            price=order.get("price", 0)
+                        )
 
-            results["steps"]["signals"] = {
+            steps["signals"] = {
                 "status": "ok",
                 "count": len(signals_executed),
                 "executed": signals_executed
@@ -161,13 +165,14 @@ class Orchestrator(BaseAgent):
             positions = await self.agents["position"].run(user_id, exchange_id, client)
             pnl = self.agents["pnl"].run(user_id, positions)
 
-            results["steps"]["positions"] = {"status": "ok", "count": len(positions)}
-            results["steps"]["pnl"] = {"status": "ok", "daily_pnl": float(pnl) if pnl else 0}
+            steps["positions"] = {"status": "ok", "count": len(positions)}
+            steps["pnl"] = {"status": "ok", "daily_pnl": float(pnl) if pnl else 0}
             results["success"] = True
 
         except Exception as e:
             logger.error(f"Orchestrator error: {e}", exc_info=True)
-            results["steps"]["error"] = str(e)
+            steps = cast(Dict[str, Any], results["steps"])
+            steps["error"] = str(e)
 
         return results
 
@@ -191,16 +196,17 @@ class Orchestrator(BaseAgent):
 
     def health_check(self) -> Dict[str, Any]:
         """Check health of all agents."""
-        health = {
+        health: Dict[str, Any] = {
             "name": self.name,
             "status": self._status,
             "agents": {},
             "healthy": True,
         }
 
+        agents_health = cast(Dict[str, Any], health["agents"])
         for name, agent in self.agents.items():
             agent_health = agent.health_check()
-            health["agents"][name] = agent_health
+            agents_health[name] = agent_health
             if not agent_health["healthy"]:
                 health["healthy"] = False
 

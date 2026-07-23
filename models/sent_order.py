@@ -8,7 +8,7 @@ from datetime import datetime
 from app import db
 
 
-class SentOrder(db.Model):
+class SentOrder(db.Model):  # type: ignore[name-defined]
     __tablename__ = "sent_orders"
 
     id = db.Column(db.Integer, primary_key=True)

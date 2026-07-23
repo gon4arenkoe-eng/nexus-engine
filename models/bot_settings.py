@@ -4,7 +4,7 @@ from datetime import datetime
 from app import db
 
 
-class BotSettings(db.Model):
+class BotSettings(db.Model):  # type: ignore[name-defined]
     __tablename__ = "bot_settings"
 
     id = db.Column(db.Integer, primary_key=True)

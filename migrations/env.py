@@ -9,6 +9,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 import os
 import sys
+from typing import Dict, Any
 
 # Добавляем корень проекта в PATH
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -51,7 +52,10 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    configuration = config.get_section(config.config_ini_section)
+    configuration: Dict[str, Any] = {}
+    section = config.get_section(config.config_ini_section)
+    if section is not None:
+        configuration.update(section)
     configuration["sqlalchemy.url"] = get_database_url()
 
     connectable = engine_from_config(

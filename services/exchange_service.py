@@ -145,7 +145,7 @@ class ExchangeService:
             api_secret=api_secret,
             passphrase=passphrase,
             demo=exchange.is_demo,
-        )
+        )  # type: ignore[abstract]
 
         # Cache
         self._clients[exchange_id] = client
@@ -160,7 +160,7 @@ class ExchangeService:
         try:
             balance = await client.get_balance()
 
-            if "error" in balance:
+            if isinstance(balance, dict) and "error" in balance:
                 return {"success": False, "error": balance["error"]}
 
             # Update last connected

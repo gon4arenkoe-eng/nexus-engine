@@ -5,7 +5,7 @@ from app import db
 import bcrypt
 
 
-class User(db.Model):
+class User(db.Model):  # type: ignore[name-defined]
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)

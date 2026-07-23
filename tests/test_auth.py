@@ -1,6 +1,6 @@
 """Auth tests."""
 import pytest
-from app import create_app, db
+from app import create_app
 
 
 @pytest.fixture
@@ -8,11 +8,7 @@ def app():
     """Create test app."""
     app = create_app()
     app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-    with app.app_context():
-        db.create_all()
-        yield app
-        db.drop_all()
+    return app
 
 
 @pytest.fixture
@@ -58,7 +54,8 @@ def test_login_success(client):
         "password": "securepassword123",
     })
     assert response.status_code == 200
-    assert "access_token" in [c.key for c in response.response.cookies]
+    set_cookie_headers = response.headers.getlist("Set-Cookie")
+    assert any("access_token" in h for h in set_cookie_headers)
 
 
 def test_login_invalid(client):

@@ -4,7 +4,7 @@ from datetime import datetime
 from app import db
 
 
-class TradeHistory(db.Model):
+class TradeHistory(db.Model):  # type: ignore[name-defined]
     __tablename__ = "trade_history"
 
     id = db.Column(db.Integer, primary_key=True)
