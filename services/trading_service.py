@@ -13,7 +13,7 @@ from agents.pnl_agent import PnLAgent
 from agents.ml_agent import MLAgent
 from agents.sentiment_agent import SentimentAgent
 from agents.notification_agent import NotificationAgent
-from agents.market_regime_agent import MarketRegimeAgent # New import
+from agents.market_regime_agent import MarketRegimeAgent  # Новый импорт
 
 from services.exchange_service import ExchangeService
 from models import BotSettings
@@ -34,8 +34,8 @@ class TradingService:
         self.ml_agent = MLAgent()
         self.sentiment_agent = SentimentAgent()
         self.notification_agent = NotificationAgent()
+        self.market_regime_agent = MarketRegimeAgent()  # Инициализация нового агента
         self.exchange_service = ExchangeService()
-        self.market_regime_agent = MarketRegimeAgent() # Initialize new agent
 
     async def run_cycle(self, user_id: int, exchange_id: int) -> Dict[str, Any]:
         """Execute one trading cycle."""
@@ -79,26 +79,25 @@ class TradingService:
             signals_executed: list[Dict[str, Any]] = []
             for i, symbol in enumerate(symbols):
                 market_data = market_data_list[i]
-                if isinstance(market_data, Exception) or market_data is None or market_data.empty:
+                if isinstance(market_data, Exception) or market_data is None or (hasattr(market_data, 'empty') and market_data.empty):
                     logger.warning(f"TradingService: Skipping {symbol} due to missing or erroneous market data.")
                     continue
 
-                # Run MarketRegimeAgent for each symbol
+                # 1. Определяем режим рынка (Trend, Range или Squeeze)
                 await self.market_regime_agent.run(symbol, market_data)
 
-                # SignalAgent will now use the market regime from Nexus Bus
+                # 2. Генерируем сигнал (SignalAgent выберет стратегию на основе режима рынка)
                 signal = await self.signal_agent.run(
                     symbol,
                     market_data,
-                    strategy_name=config.get("strategy"), # Let SignalAgent decide based on regime
-                    confidence_threshold=config.get(
-                        "confidence_threshold", 50
-                    )
+                    strategy_name=config.get("strategy"), # Если None, выберет автоматически
+                    confidence_threshold=config.get("confidence_threshold", 50)
                 )
 
                 if not signal or signal["signal"] == "NEUTRAL":
                     continue
 
+                # 3. Дополнительные фильтры (ML и Sentiment)
                 if config.get("use_ml_filter", False):
                     if not self.ml_agent.run(signal, market_data):
                         continue
@@ -108,12 +107,12 @@ class TradingService:
                     if sentiment and sentiment.get("fear_greed_index", 50) < 20:
                         continue
 
-                positions = await self.position_agent.run(
-                    user_id, exchange_id, client
-                )
+                # 4. Проверка позиций и баланса
+                positions = await self.position_agent.run(user_id, exchange_id, client)
                 balance = await client.get_balance()
                 usdt_balance = balance.get("USDT", 0) if isinstance(balance, dict) else 0
 
+                # 5. Риск-менеджмент
                 risk_result = self.risk_agent.run(
                     signal, user_id, balance=usdt_balance,
                     open_positions=positions
@@ -128,6 +127,7 @@ class TradingService:
                     })
                     continue
 
+                # 6. Исполнение ордера
                 order = await self.execution_agent.run(
                     signal, risk_result, user_id, exchange_id, client, symbol
                 )
@@ -140,6 +140,7 @@ class TradingService:
                         "order_id": order.get("order_id")
                     })
 
+                    # 7. Уведомление
                     await self.notification_agent.send_trade_notification(
                         user_id=user_id,
                         symbol=symbol,
@@ -154,9 +155,7 @@ class TradingService:
                 "executed": signals_executed
             }
 
-            positions = await self.position_agent.run(
-                user_id, exchange_id, client
-            )
+            positions = await self.position_agent.run(user_id, exchange_id, client)
             pnl = self.pnl_agent.run(user_id, positions)
 
             steps["positions"] = {"status": "ok", "count": len(positions)}
@@ -175,23 +174,23 @@ class TradingService:
 
     async def start_bot(self, user_id: int) -> bool:
         """Start trading bot."""
+        from app import db
         settings = BotSettings.query.filter_by(user_id=user_id).first()
         if not settings:
             return False
         settings.is_running = True
         settings.started_at = datetime.utcnow()
-        from app import db
         db.session.commit()
         return True
 
     async def stop_bot(self, user_id: int) -> bool:
         """Stop trading bot."""
+        from app import db
         settings = BotSettings.query.filter_by(user_id=user_id).first()
         if not settings:
             return False
         settings.is_running = False
         settings.stopped_at = datetime.utcnow()
-        from app import db
         db.session.commit()
         return True
 
