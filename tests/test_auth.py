@@ -54,7 +54,8 @@ def test_login_success(client):
         "password": "securepassword123",
     })
     assert response.status_code == 200
-    assert "access_token" in [c.key for c in response.response.cookies]
+    set_cookie_headers = response.headers.getlist("Set-Cookie")
+    assert any("access_token" in h for h in set_cookie_headers)
 
 
 def test_login_invalid(client):
