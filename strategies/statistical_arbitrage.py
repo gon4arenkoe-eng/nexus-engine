@@ -29,22 +29,22 @@ class StatisticalArbitrageStrategy(BaseStrategy):
         self.exit_threshold = exit_threshold
 
     def analyze(
-        self, data_a: pd.DataFrame, data_b: pd.DataFrame, **kwargs
+        self, data: pd.DataFrame, data_b: Optional[pd.DataFrame] = None, **kwargs
     ) -> Dict[str, Any]:
         # For statistical arbitrage, we need data for two symbols
         if not self._validate_data(
-            data_a, min_rows=self.z_score_period + 2
+            data, min_rows=self.z_score_period + 2
         ) or not self._validate_data(data_b, min_rows=self.z_score_period + 2):
             return self._neutral("Insufficient data for pair trading", self.description)
 
         # Ensure dataframes are aligned by index (time)
-        common_index = data_a.index.intersection(data_b.index)
+        common_index = data.index.intersection(data_b.index)
         if len(common_index) < self.z_score_period + 2:
             return self._neutral(
                 "Insufficient common data for pair trading", self.description
             )
 
-        df_a = data_a.loc[common_index].copy()
+        df_a = data.loc[common_index].copy()
         df_b = data_b.loc[common_index].copy()
 
         # Calculate spread (simple difference for now, can be log ratio)
