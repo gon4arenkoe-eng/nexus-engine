@@ -200,7 +200,7 @@ class Orchestrator(BaseAgent):
                 asyncio.sleep(interval)
             except Exception as e:
                 logger.error(f"Cycle error: {e}")
-                asyncio.sleep(5)
+                await asyncio.sleep(5)
 
     def stop(self):
         """Stop trading loop."""
