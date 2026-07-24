@@ -197,7 +197,7 @@ class Orchestrator(BaseAgent):
         while self._running:
             try:
                 await self.run(user_id, exchange_id)
-                asyncio.sleep(interval)
+                await asyncio.sleep(interval)
             except Exception as e:
                 logger.error(f"Cycle error: {e}")
                 await asyncio.sleep(5)
