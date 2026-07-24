@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus Engine — панель управления</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-canvas:#150F2E;
+    --bg-surface:#1E1740;
+    --bg-raised:#28204F;
+    --border:#3A3068;
+    --border-soft:#2A2350;
+    --text-primary:#F3F0FF;
+    --text-secondary:#B3A8E0;
+    --text-muted:#7C71AD;
+    --nexus:#C084FC;
+    --nexus-2:#67E8F9;
+    --nexus-dim:#3D2E6E;
+    --live:#2DE8C4;
+    --live-dim:#123B34;
+    --long:#5EEB8F;
+    --long-dim:#123B23;
+    --short:#FF5C93;
+    --short-dim:#411A32;
+    --warn:#FFC750;
+    --warn-dim:#453410;
+    --glow-1:rgba(192,132,252,0.16);
+    --glow-2:rgba(103,232,249,0.12);
+  }
+  body.light-theme{
+    --bg-canvas:#F6F4FC;
+    --bg-surface:#FFFFFF;
+    --bg-raised:#F1EDFA;
+    --border:#E2DBF5;
+    --border-soft:#EAE4F7;
+    --text-primary:#221B3D;
+    --text-secondary:#5C5480;
+    --text-muted:#948BB8;
+    --nexus:#9333EA;
+    --nexus-2:#0891B2;
+    --nexus-dim:#F1E4FE;
+    --live:#0D9488;
+    --live-dim:#E3F8F4;
+    --long:#16A34A;
+    --long-dim:#E8FBEF;
+    --short:#E11D48;
+    --short-dim:#FCE8EC;
+    --warn:#D97706;
+    --warn-dim:#FDF1DF;
+    --glow-1:rgba(147,51,234,0.07);
+    --glow-2:rgba(8,145,178,0.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(900px 500px at 100% -10%, var(--glow-1), transparent 60%),
+      radial-gradient(700px 500px at -10% 100%, var(--glow-2), transparent 55%),
+      var(--bg-canvas);
+    color:var(--text-primary);
+    font-family:'Inter',sans-serif;
+    display:flex;
+    min-height:100vh;
+    font-size:14px;
+    transition:background-color .2s ease, color .2s ease;
+  }
+  body, body *{transition:background-color .15s ease, border-color .15s ease, color .15s ease;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+
+  /* ---------- sidebar ---------- */
+  .sidebar{
+    width:236px;
+    flex-shrink:0;
+    background:var(--bg-surface);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    padding:20px 14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:4px 8px 22px 8px;
+  }
+  .brand-mark{width:30px;height:30px;flex-shrink:0;}
+  .brand-name{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;letter-spacing:0.3px;line-height:1.1;
+    background:linear-gradient(90deg,#C084FC,#67E8F9);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .brand-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text-muted);}
+
+  nav{display:flex;flex-direction:column;gap:2px;}
+  .nav-item{
+    display:flex;align-items:center;gap:11px;
+    padding:10px 12px;border-radius:8px;
+    color:var(--text-secondary);
+    cursor:pointer;
+    font-size:13.5px;
+    transition:background .15s, color .15s;
+    border:1px solid transparent;
+  }
+  .nav-item svg{width:17px;height:17px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.6;}
+  .nav-item:hover{background:var(--bg-raised);color:var(--text-primary);}
+  .nav-item.active{
+    background:var(--bg-raised);
+    color:var(--text-primary);
+    border-color:rgba(192,132,252,0.35);
+    box-shadow:0 0 0 1px rgba(192,132,252,0.12), 0 0 18px rgba(192,132,252,0.14);
+  }
+  .nav-item.active .nav-dot{background:var(--nexus);box-shadow:0 0 8px var(--nexus);}
+  .nav-dot{width:5px;height:5px;border-radius:50%;background:transparent;margin-left:auto;}
+  .nav-divider{height:1px;background:var(--border-soft);margin:10px 6px;}
+
+  .sidebar-foot{
+    margin-top:auto;
+    padding:12px 10px 4px 10px;
+    border-top:1px solid var(--border-soft);
+    font-size:11px;
+    color:var(--text-muted);
+    line-height:1.6;
+  }
+
+  /* ---------- main ---------- */
+  main{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .topbar{
+    display:flex;flex-direction:column;
+    padding:18px 32px;
+    border-bottom:1px solid var(--border);
+  }
+  .topbar-row{display:flex;align-items:center;justify-content:space-between;}
+  .topbar-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:19px;}
+  .topbar-status{display:flex;align-items:center;gap:18px;}
+  .status-pill{
+    display:flex;align-items:center;gap:7px;
+    font-size:12.5px;color:var(--live);
+    background:var(--live-dim);
+    border:1px solid rgba(45,232,196,0.35);
+    box-shadow:0 0 16px rgba(45,232,196,0.16);
+    padding:5px 11px 5px 9px;border-radius:20px;
+  }
+  .status-pill .ping{width:6px;height:6px;border-radius:50%;background:var(--live);box-shadow:0 0 6px var(--live);animation:ping 1.8s ease-in-out infinite;}
+  @keyframes ping{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .status-metric{
+    text-align:center;
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;
+    padding:6px 14px;min-width:64px;
+  }
+  .status-metric .num{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;}
+  .status-metric .lbl{font-size:10.5px;color:var(--text-muted);margin-top:2px;}
+
+  .pnl-row{margin-top:14px;}
+  .pnl-strip{
+    display:flex;align-items:baseline;gap:12px;
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;
+    padding:12px 18px;width:fit-content;
+  }
+  .pnl-strip .lbl{font-size:12px;color:var(--text-secondary);}
+  .pnl-strip .num{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:500;}
+  .pnl-strip .sub{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-muted);}
+
+
+  .top-profile{
+    display:flex;align-items:center;gap:9px;
+    padding:5px 12px 5px 5px;border-radius:22px;
+    background:var(--bg-surface);border:1px solid var(--border);
+    cursor:pointer;transition:border-color .15s;
+  }
+  .top-profile:hover{border-color:rgba(192,132,252,0.35);}
+  .top-profile .avatar-sm{
+    width:28px;height:28px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg,#C084FC,#67E8F9);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;color:#1A1140;
+  }
+  .top-profile .name{font-size:13px;font-weight:500;}
+  .top-profile svg{width:14px;height:14px;stroke:var(--text-muted);fill:none;stroke-width:1.8;}
+
+  .theme-toggle{
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;
+    background:var(--bg-surface);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .theme-toggle:hover{border-color:rgba(192,132,252,0.35);}
+  .theme-toggle svg{width:16px;height:16px;stroke:var(--text-secondary);fill:none;stroke-width:1.8;}
+  .theme-toggle .icon-moon{display:none;}
+  body.light-theme .theme-toggle .icon-sun{display:none;}
+  body.light-theme .theme-toggle .icon-moon{display:block;}
+
+  .content{padding:26px 32px 40px 32px;overflow-y:auto;}
+  .panel{display:none;}
+  .panel.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
+
+  h2.section-title{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:14px;color:var(--text-secondary);margin:26px 0 12px 0;letter-spacing:0.2px;}
+  h2.section-title:first-child{margin-top:0;}
+
+  /* kpi cards */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .kpi-grid-5{grid-template-columns:repeat(5,1fr);}
+  .kpi-card{
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;
+    padding:16px 18px 16px 20px;position:relative;overflow:hidden;
+    transition:transform .18s ease, border-color .18s ease;
+  }
+  .kpi-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,var(--nexus));}
+  .kpi-card:hover{transform:translateY(-2px);border-color:var(--border-soft);}
+  .kpi-card:nth-child(2){--accent:var(--nexus);}
+  .kpi-card:nth-child(3){--accent:var(--live);}
+  .kpi-card:nth-child(4){--accent:var(--long);}
+  .kpi-card:nth-child(5){--accent:var(--warn);}
+  .kpi-card-pnl{--accent:var(--live);background:linear-gradient(135deg,rgba(45,232,196,0.08),var(--bg-surface) 60%);}
+  .kpi-card-pnl .kpi-val{font-size:26px;}
+  .kpi-lbl{font-size:12px;color:var(--text-muted);margin-bottom:8px;}
+  .kpi-val{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:500;}
+  .kpi-delta{font-size:12px;margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+  .up{color:var(--long);} .down{color:var(--short);}
+
+  /* equity chart */
+  .chart-card{
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;
+    padding:20px 22px;margin-top:16px;
+  }
+  .chart-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
+  .chart-head .t{font-size:13px;color:var(--text-secondary);}
+  .chart-head .v{font-family:'IBM Plex Mono',monospace;font-size:18px;}
+
+  /* overview bento grid */
+  .bento-row{display:grid;gap:14px;margin-top:14px;}
+  .bento-row.cols-2{grid-template-columns:1fr 1fr;}
+  .bento-row.cols-main{grid-template-columns:1.5fr 1fr;}
+  .mini-card{
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;
+    padding:16px 18px;min-width:0;
+  }
+  .mini-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;}
+  .mini-head .t{font-size:12.5px;color:var(--text-secondary);}
+  .mini-head .v{font-family:'IBM Plex Mono',monospace;font-size:13px;}
+  .period-toggle{display:flex;gap:4px;}
+  .period-chip{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-muted);
+    padding:3px 8px;border-radius:6px;cursor:default;
+  }
+  .period-chip.active{background:var(--bg-raised);color:var(--nexus-2);}
+
+  .exposure-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .exposure-row:last-child{margin-bottom:0;}
+  .exposure-label{font-size:12.5px;width:52px;flex-shrink:0;color:var(--text-secondary);}
+  .exposure-track{flex:1;height:6px;background:var(--bg-raised);border-radius:3px;overflow:hidden;}
+  .exposure-fill{height:100%;border-radius:3px;}
+  .exposure-pct{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-muted);width:32px;text-align:right;flex-shrink:0;}
+
+  .mini-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-soft);}
+  .mini-row:last-child{border-bottom:none;padding-bottom:0;}
+  .mini-row:first-child{padding-top:0;}
+  .mini-row .name{font-size:12.5px;flex:1;}
+  .mini-row .meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);}
+
+  .strat-bar-row{margin-bottom:11px;}
+  .strat-bar-row:last-child{margin-bottom:0;}
+  .strat-bar-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;}
+  .strat-bar-top .n{color:var(--text-secondary);}
+  .strat-bar-track{height:5px;background:var(--bg-raised);border-radius:3px;overflow:hidden;}
+  .strat-bar-fill{height:100%;background:var(--nexus);border-radius:3px;}
+
+  /* account tab */
+  .profile-card{
+    display:flex;align-items:center;gap:16px;
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;
+    padding:18px 20px;
+  }
+  .avatar{
+    width:52px;height:52px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg,#C084FC,#67E8F9);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;color:#1A1140;
+  }
+  .profile-name{font-weight:500;font-size:15px;}
+  .profile-role{font-size:12.5px;color:var(--text-muted);}
+  .plan-tag{
+    margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    background:var(--nexus-dim);color:var(--nexus-2);padding:5px 12px;border-radius:20px;
+  }
+
+  .stash-card{
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;
+    padding:20px 22px;display:flex;align-items:center;gap:24px;
+  }
+  .stash-main{flex:1;}
+  .stash-lbl{font-size:12.5px;color:var(--text-secondary);margin-bottom:6px;}
+  .stash-val{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:500;}
+  .stash-sub{font-size:11.5px;color:var(--text-muted);margin-top:4px;}
+  .stash-actions{display:flex;gap:8px;}
+  .btn{
+    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;
+    padding:9px 16px;border-radius:8px;border:1px solid var(--border);
+    background:var(--bg-raised);color:var(--text-primary);cursor:pointer;
+  }
+  .btn.primary{background:linear-gradient(135deg,#C084FC,#67E8F9);color:#1A1140;border:none;}
+  .btn.danger{border-color:rgba(255,92,147,0.4);color:var(--short);background:var(--short-dim);}
+
+  .exchange-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-soft);}
+  .exchange-row:last-child{border-bottom:none;}
+  .exchange-icon{
+    width:30px;height:30px;border-radius:8px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;color:#1A1140;
+  }
+  .exchange-info{flex:1;min-width:0;}
+  .exchange-name{font-weight:500;font-size:13px;}
+  .exchange-status{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+  .exchange-status.on{color:var(--live);}
+  .exchange-key{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-muted);margin-right:6px;}
+  .btn.small{padding:6px 13px;font-size:11.5px;border-radius:7px;}
+  .card-head-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;}
+
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(9,6,22,0.6);
+    align-items:center;justify-content:center;z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    width:360px;background:var(--bg-surface);border:1px solid var(--border);border-radius:14px;
+    padding:22px 24px;
+  }
+  .modal-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;margin-bottom:16px;}
+  .field-lbl{font-size:12px;color:var(--text-secondary);margin-bottom:6px;display:block;}
+  .field-input, .field-select{
+    width:100%;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;
+    color:var(--text-primary);font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+    padding:9px 11px;margin-bottom:14px;
+  }
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
+
+  /* settings tab */
+  .settings-card{
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;
+    padding:18px 20px;margin-bottom:14px;
+  }
+  .setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-soft);gap:20px;}
+  .setting-row:last-child{border-bottom:none;padding-bottom:0;}
+  .setting-row:first-child{padding-top:0;}
+  .setting-lbl{font-size:13px;}
+  .setting-hint{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+
+  .toggle{position:relative;width:38px;height:22px;flex-shrink:0;}
+  .toggle input{opacity:0;width:0;height:0;}
+  .toggle .track{position:absolute;inset:0;background:var(--bg-raised);border:1px solid var(--border);border-radius:20px;transition:.15s;}
+  .toggle .thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text-muted);transition:.15s;}
+  .toggle input:checked + .track{background:var(--nexus-dim);border-color:rgba(192,132,252,0.4);}
+  .toggle input:checked + .track .thumb{transform:translateX(16px);background:var(--nexus);}
+
+  .slider-row{width:220px;flex-shrink:0;display:flex;align-items:center;gap:10px;}
+  .slider-row input[type=range]{-webkit-appearance:none;flex:1;height:4px;background:var(--bg-raised);border-radius:2px;outline:none;}
+  .slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--nexus);cursor:pointer;}
+  .slider-val{font-family:'IBM Plex Mono',monospace;font-size:12.5px;width:36px;text-align:right;color:var(--text-secondary);}
+
+  .strategy-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-soft);}
+  .strategy-row:last-child{border-bottom:none;padding-bottom:0;}
+  .strategy-row:first-child{padding-top:0;}
+  .strategy-row .name{font-size:13px;flex:1;}
+  .strategy-row .tag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-muted);}
+  .priority-btns{display:flex;gap:2px;}
+  .priority-btns button{
+    width:22px;height:22px;border-radius:5px;border:1px solid var(--border);
+    background:var(--bg-raised);color:var(--text-secondary);cursor:pointer;font-size:11px;
+  }
+
+  .chip-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .chip{
+    display:flex;align-items:center;gap:6px;
+    background:var(--short-dim);color:var(--short);
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;
+    padding:5px 8px 5px 11px;border-radius:20px;
+  }
+  .chip button{background:none;border:none;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0;}
+  .chip-add{display:flex;gap:8px;}
+  .chip-add input{flex:1;}
+
+  /* generic cards grid (agents) */
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;}
+  .agent-card{
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;
+    padding:16px 18px;transition:transform .18s ease, border-color .18s ease;
+  }
+  .agent-card:hover{transform:translateY(-2px);border-color:rgba(192,132,252,0.3);}
+  .agent-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .agent-name{font-weight:500;font-size:13.5px;}
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .dot.online{background:var(--live);box-shadow:0 0 0 3px var(--live-dim);}
+  .dot.idle{background:var(--text-muted);box-shadow:0 0 0 3px var(--bg-raised);}
+  .dot.error{background:var(--short);box-shadow:0 0 0 3px var(--short-dim);}
+  .agent-meta{font-size:11.5px;color:var(--text-muted);display:flex;justify-content:space-between;}
+  .agent-meta .mono{color:var(--text-secondary);}
+
+  /* tables */
+  table.data{width:100%;border-collapse:collapse;}
+  table.data th{
+    text-align:left;font-size:11px;color:var(--text-muted);font-weight:500;
+    padding:9px 14px;border-bottom:1px solid var(--border);letter-spacing:.3px;
+  }
+  table.data td{padding:12px 14px;border-bottom:1px solid var(--border-soft);font-size:13px;}
+  table.data tr:last-child td{border-bottom:none;}
+  .table-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;overflow-x:auto;}
+  .side-tag{font-size:11px;padding:3px 8px;border-radius:5px;font-family:'IBM Plex Mono',monospace;}
+  .side-tag.long{background:var(--long-dim);color:var(--long);}
+  .side-tag.short{background:var(--short-dim);color:var(--short);}
+  .status-tag{font-size:11px;padding:3px 9px;border-radius:20px;}
+  .status-tag.active{background:var(--live-dim);color:var(--live);}
+  .status-tag.paused{background:var(--bg-raised);color:var(--text-muted);}
+
+  /* signals feed */
+  .feed{display:flex;flex-direction:column;}
+  .feed-row{
+    display:flex;align-items:center;gap:14px;
+    padding:13px 16px;border-bottom:1px solid var(--border-soft);
+  }
+  .feed-row:last-child{border-bottom:none;}
+  .feed-time{font-family:'IBM Plex Mono',monospace;color:var(--text-muted);font-size:12px;width:64px;flex-shrink:0;}
+  .feed-pair{font-weight:500;font-size:13px;width:100px;flex-shrink:0;}
+  .feed-conf{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-secondary);}
+  .conf-bar{width:70px;height:4px;background:var(--bg-raised);border-radius:2px;overflow:hidden;margin-left:10px;}
+  .conf-bar-fill{height:100%;background:var(--nexus);}
+
+  /* logs */
+  .log-console{
+    background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;
+    padding:16px 20px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:2;
+  }
+  .log-line{display:flex;gap:12px;}
+  .log-ts{color:var(--text-muted);flex-shrink:0;}
+  .log-tag{flex-shrink:0;width:56px;}
+  .log-tag.info{color:var(--live);}
+  .log-tag.warn{color:var(--warn);}
+  .log-tag.error{color:var(--short);}
+  .log-msg{color:var(--text-secondary);}
+  .log-msg b{color:var(--text-primary);font-weight:500;}
+  /* ---------- responsive ---------- */
+  .hamburger{
+    display:none;width:36px;height:36px;border-radius:9px;flex-shrink:0;
+    background:var(--bg-surface);border:1px solid var(--border);
+    align-items:center;justify-content:center;cursor:pointer;margin-right:12px;
+  }
+  .hamburger svg{width:18px;height:18px;stroke:var(--text-secondary);fill:none;stroke-width:1.8;}
+  .sidebar-backdrop{display:none;}
+
+  @media (max-width:1024px){
+    .kpi-grid, .kpi-grid-5{grid-template-columns:repeat(2,1fr);}
+    .bento-row.cols-2, .bento-row.cols-main{grid-template-columns:1fr;}
+    .card-grid{grid-template-columns:repeat(2,1fr);}
+  }
+
+  @media (max-width:900px){
+    body{display:block;}
+    .sidebar{
+      position:fixed;top:0;left:0;bottom:0;z-index:70;width:250px;
+      transform:translateX(-100%);transition:transform .22s ease;
+      box-shadow:24px 0 48px rgba(0,0,0,0.35);
+    }
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-backdrop{
+      display:none;position:fixed;inset:0;background:rgba(9,6,22,0.55);z-index:65;
+    }
+    .sidebar-backdrop.open{display:block;}
+    main{width:100%;}
+    .hamburger{display:flex;}
+  }
+
+  @media (max-width:640px){
+    .kpi-grid, .kpi-grid-5{grid-template-columns:repeat(2,1fr);gap:10px;}
+    .card-grid{grid-template-columns:1fr;}
+    .topbar{padding:14px 16px;}
+    .topbar-row{flex-wrap:wrap;row-gap:12px;}
+    .topbar-status{flex-wrap:wrap;gap:8px;}
+    .status-metric{min-width:0;padding:6px 10px;}
+    .status-metric .num{font-size:12.5px;}
+    .top-profile .name{display:none;}
+    .content{padding:16px 16px 32px 16px;}
+    table.data{font-size:12px;}
+    table.data th, table.data td{padding:9px 10px;white-space:nowrap;}
+    .modal-box{width:88vw;padding:18px;}
+    .stash-card{flex-direction:column;align-items:flex-start;gap:14px;}
+    .stash-actions{width:100%;}
+    .stash-actions .btn{flex:1;}
+    .profile-card{flex-wrap:wrap;row-gap:10px;}
+    .exchange-row{flex-wrap:wrap;row-gap:8px;}
+    .exchange-row .btn{margin-left:auto;}
+    .slider-row{width:140px;}
+    .setting-row{flex-wrap:wrap;row-gap:10px;}
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
+      <defs>
+        <linearGradient id="nexusGrad" x1="0" y1="0" x2="32" y2="32">
+          <stop offset="0%" stop-color="#C084FC"/>
+          <stop offset="100%" stop-color="#67E8F9"/>
+        </linearGradient>
+      </defs>
+      <circle cx="16" cy="16" r="10" fill="url(#nexusGrad)" opacity="0.14"/>
+      <path d="M16 8V13.5M24 16H18.5M16 24V18.5M8 16H13.5" stroke="url(#nexusGrad)" stroke-width="1.6"/>
+      <circle cx="16" cy="5" r="2.1" fill="url(#nexusGrad)"/>
+      <circle cx="27" cy="16" r="2.1" fill="url(#nexusGrad)"/>
+      <circle cx="16" cy="27" r="2.1" fill="url(#nexusGrad)"/>
+      <circle cx="5" cy="16" r="2.1" fill="url(#nexusGrad)"/>
+      <circle cx="16" cy="16" r="3.4" fill="url(#nexusGrad)"/>
+    </svg>
+    <div>
+      <div class="brand-name">Nexus</div>
+      <div class="brand-sub">ENGINE</div>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-item active" data-tab="overview">
+      <svg viewBox="0 0 24 24"><path d="M3 12h4l2 7 4-14 2 7h6"/></svg>
+      Обзор<span class="nav-dot"></span>
+    </div>
+    <div class="nav-item" data-tab="agents">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.4"/><circle cx="12" cy="4" r="1.6"/><circle cx="19.5" cy="16" r="1.6"/><circle cx="4.5" cy="16" r="1.6"/><path d="M12 6.4V9.8M17.9 15.1l-3.4-1.9M6.1 15.1l3.4-1.9"/></svg>
+      Агенты<span class="nav-dot"></span>
+    </div>
+    <div class="nav-item" data-tab="strategies">
+      <svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+      Стратегии<span class="nav-dot"></span>
+    </div>
+    <div class="nav-item" data-tab="positions">
+      <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="1.5"/><path d="M8 10V7.5A4 4 0 0112 3.5 4 4 0 0116 7.5V10"/></svg>
+      Позиции<span class="nav-dot"></span>
+    </div>
+    <div class="nav-item" data-tab="history">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3.2 2"/></svg>
+      История сделок<span class="nav-dot"></span>
+    </div>
+    <div class="nav-item" data-tab="signals">
+      <svg viewBox="0 0 24 24"><path d="M12 19V13M12 13a4 4 0 100-8 4 4 0 000 8z"/><path d="M6.5 8a8 8 0 000 8M17.5 8a8 8 0 010 8"/></svg>
+      Сигналы<span class="nav-dot"></span>
+    </div>
+    <div class="nav-item" data-tab="logs">
+      <svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M7 9l3 2.5L7 14M12 14h5"/></svg>
+      Логи<span class="nav-dot"></span>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-item" data-tab="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 4.5v2M12 17.5v2M19.5 12h-2M6.5 12h-2M17.5 6.5l-1.4 1.4M7.9 16.1l-1.4 1.4M17.5 17.5l-1.4-1.4M7.9 7.9L6.5 6.5"/></svg>
+      Настройки<span class="nav-dot"></span>
+    </div>
+  </nav>
+
+  <div class="sidebar-foot mono">
+    v5.2 · uptime 14d 6h<br>13 агентов · 4 биржи
+  </div>
+</aside>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<main>
+  <div class="topbar">
+    <div class="topbar-row">
+      <div style="display:flex;align-items:center;">
+        <div class="hamburger" id="hamburgerBtn">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </div>
+        <div class="topbar-title" id="pageTitle">Обзор</div>
+      </div>
+      <div class="topbar-status">
+        <div class="status-pill"><span class="ping"></span>онлайн</div>
+        <div class="status-metric">
+          <div class="num">$18,430.12</div>
+          <div class="lbl">эквити</div>
+        </div>
+        <div class="status-metric">
+          <div class="num">37</div>
+          <div class="lbl">сигналов сегодня</div>
+        </div>
+        <div class="theme-toggle" id="themeToggle">
+          <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1110.2 4a7 7 0 009.8 10.5z"/></svg>
+        </div>
+        <div class="top-profile" id="topProfile">
+          <div class="avatar-sm">Ж</div>
+          <span class="name">Женя</span>
+          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="panel active" id="panel-overview">
+      <div class="kpi-grid kpi-grid-5">
+        <div class="kpi-card kpi-card-pnl">
+          <div class="kpi-lbl">PnL за день</div>
+          <div class="kpi-val mono up">+$520</div>
+          <div class="kpi-delta up">+2.9%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Эквити</div>
+          <div class="kpi-val mono">$18,430</div>
+          <div class="kpi-delta up">+520 за 24ч</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Открытых позиций</div>
+          <div class="kpi-val mono">3</div>
+          <div class="kpi-delta" style="color:var(--text-muted)">макс. 5</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Активных агентов</div>
+          <div class="kpi-val mono">10 / 13</div>
+          <div class="kpi-delta" style="color:var(--text-muted)">backtest — простой</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Сигналов сегодня</div>
+          <div class="kpi-val mono">37</div>
+          <div class="kpi-delta up">win-rate 58%</div>
+        </div>
+      </div>
+
+      <div class="bento-row cols-2">
+        <div class="mini-card">
+          <div class="mini-head">
+            <span class="t">Кривая эквити</span>
+            <div class="period-toggle">
+              <span class="period-chip">24ч</span>
+              <span class="period-chip active">7д</span>
+              <span class="period-chip">30д</span>
+            </div>
+          </div>
+          <svg viewBox="0 0 300 70" width="100%" height="70" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="eqfill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2DE8C4" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#2DE8C4" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="eqline" x1="0" y1="0" x2="300" y2="0">
+                <stop offset="0%" stop-color="#67E8F9"/>
+                <stop offset="100%" stop-color="#2DE8C4"/>
+              </linearGradient>
+            </defs>
+            <polygon points="0,55 19,51 42,54 66,45 89,47 113,39 136,42 160,33 183,36 206,27 230,30 253,21 277,24 300,15 300,70 0,70" fill="url(#eqfill)"/>
+            <polyline points="0,55 19,51 42,54 66,45 89,47 113,39 136,42 160,33 183,36 206,27 230,30 253,21 277,24 300,15" fill="none" stroke="url(#eqline)" stroke-width="2"/>
+          </svg>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-head"><span class="t">Экспозиция по парам</span><span class="v mono">$18,430</span></div>
+          <div class="exposure-row">
+            <span class="exposure-label">BTC</span>
+            <span class="exposure-track"><span class="exposure-fill" style="width:42%;background:var(--warn)"></span></span>
+            <span class="exposure-pct">42%</span>
+          </div>
+          <div class="exposure-row">
+            <span class="exposure-label">ETH</span>
+            <span class="exposure-track"><span class="exposure-fill" style="width:28%;background:var(--nexus)"></span></span>
+            <span class="exposure-pct">28%</span>
+          </div>
+          <div class="exposure-row">
+            <span class="exposure-label">SOL</span>
+            <span class="exposure-track"><span class="exposure-fill" style="width:18%;background:var(--nexus-2)"></span></span>
+            <span class="exposure-pct">18%</span>
+          </div>
+          <div class="exposure-row">
+            <span class="exposure-label">прочее</span>
+            <span class="exposure-track"><span class="exposure-fill" style="width:12%;background:var(--text-muted)"></span></span>
+            <span class="exposure-pct">12%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bento-row cols-main">
+        <div class="mini-card">
+          <div class="mini-head"><span class="t">Открытые позиции</span><span class="v mono up">+1 / -1</span></div>
+          <table class="data" style="font-size:12.5px;">
+            <tr><th>Пара</th><th>Сторона</th><th>Вход</th><th>Текущая</th><th>PnL</th></tr>
+            <tr><td class="mono">BTC/USDT</td><td><span class="side-tag long">LONG</span></td><td class="mono">64,200</td><td class="mono">65,010</td><td class="mono up">+1.26%</td></tr>
+            <tr><td class="mono">ETH/USDT</td><td><span class="side-tag short">SHORT</span></td><td class="mono">3,410</td><td class="mono">3,392</td><td class="mono up">+0.53%</td></tr>
+            <tr><td class="mono">SOL/USDT</td><td><span class="side-tag long">LONG</span></td><td class="mono">142.50</td><td class="mono">139.80</td><td class="mono down">-1.89%</td></tr>
+          </table>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-head"><span class="t">Агенты</span><span class="v mono">10 / 13</span></div>
+          <div class="mini-row"><span class="dot online"></span><span class="name">Orchestrator</span><span class="meta">1с</span></div>
+          <div class="mini-row"><span class="dot online"></span><span class="name">Signal Agent</span><span class="meta">1с</span></div>
+          <div class="mini-row"><span class="dot online"></span><span class="name">Risk Agent</span><span class="meta">3с</span></div>
+          <div class="mini-row"><span class="dot online"></span><span class="name">Execution Agent</span><span class="meta">12с</span></div>
+          <div class="mini-row"><span class="dot idle"></span><span class="name">ML Agent</span><span class="meta">9м</span></div>
+        </div>
+      </div>
+
+      <div class="bento-row cols-main">
+        <div class="mini-card">
+          <div class="mini-head"><span class="t">Последние сигналы</span><span class="v mono">37 сегодня</span></div>
+          <div class="mini-row"><span class="side-tag long" style="width:44px;text-align:center;">LONG</span><span class="name">BTC/USDT</span><span class="meta">82% · 12:41</span></div>
+          <div class="mini-row"><span class="side-tag short" style="width:44px;text-align:center;">SHORT</span><span class="name">ETH/USDT</span><span class="meta">74% · 12:39</span></div>
+          <div class="mini-row"><span class="side-tag long" style="width:44px;text-align:center;">LONG</span><span class="name">SOL/USDT</span><span class="meta">65% · 12:36</span></div>
+        </div>
+
+        <div class="mini-card">
+          <div class="mini-head"><span class="t">Win-rate по стратегиям</span></div>
+          <div class="strat-bar-row">
+            <div class="strat-bar-top"><span>EMA Cross</span><span class="n mono">58%</span></div>
+            <div class="strat-bar-track"><div class="strat-bar-fill" style="width:58%"></div></div>
+          </div>
+          <div class="strat-bar-row">
+            <div class="strat-bar-top"><span>Bollinger Squeeze</span><span class="n mono">61%</span></div>
+            <div class="strat-bar-track"><div class="strat-bar-fill" style="width:61%;background:var(--nexus-2)"></div></div>
+          </div>
+          <div class="strat-bar-row">
+            <div class="strat-bar-top"><span>Mean Reversion</span><span class="n mono">54%</span></div>
+            <div class="strat-bar-track"><div class="strat-bar-fill" style="width:54%;background:var(--text-muted)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-agents">
+      <h2 class="section-title">Статус агентов · NEXUS Swarm</h2>
+      <div class="card-grid">
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Orchestrator</span><span class="dot online"></span></div>
+          <div class="agent-meta"><span>координация роя</span><span class="mono">1с назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Market Data Agent</span><span class="dot online"></span></div>
+          <div class="agent-meta"><span>сбор котировок, 4 биржи</span><span class="mono">2с назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Market Agent</span><span class="dot online"></span></div>
+          <div class="agent-meta"><span>кэш рыночных данных</span><span class="mono">2с назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Market Regime Agent</span><span class="dot online"></span></div>
+          <div class="agent-meta"><span>тренд / флэт по ADX</span><span class="mono">6с назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Signal Agent</span><span class="dot online"></span></div>
+          <div class="agent-meta"><span>агрегация сигналов стратегий</span><span class="mono">1с назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Sentiment Agent</span><span class="dot idle"></span></div>
+          <div class="agent-meta"><span>анализ новостного фона</span><span class="mono">4м назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">ML Agent</span><span class="dot idle"></span></div>
+          <div class="agent-meta"><span>ML-прогноз движения цены</span><span class="mono">9м назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Risk Agent</span><span class="dot online"></span></div>
+          <div class="agent-meta"><span>риск 2% · плечо 5x</span><span class="mono">3с назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Position Agent</span><span class="dot online"></span></div>
+          <div class="agent-meta"><span>учёт открытых позиций</span><span class="mono">3с назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Execution Agent</span><span class="dot online"></span></div>
+          <div class="agent-meta"><span>постановка ордеров</span><span class="mono">12с назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">PnL Agent</span><span class="dot online"></span></div>
+          <div class="agent-meta"><span>расчёт прибыли/убытка</span><span class="mono">5с назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Notification Agent</span><span class="dot online"></span></div>
+          <div class="agent-meta"><span>Telegram / email алерты</span><span class="mono">40с назад</span></div>
+        </div>
+        <div class="agent-card">
+          <div class="agent-top"><span class="agent-name">Config Agent</span><span class="dot idle"></span></div>
+          <div class="agent-meta"><span>настройки, ожидает</span><span class="mono">21м назад</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-strategies">
+      <h2 class="section-title">Стратегии</h2>
+      <div class="table-card">
+        <table class="data">
+          <tr><th>Стратегия</th><th>Индикаторы</th><th>Рынок</th><th>Win-rate</th><th>Статус</th></tr>
+          <tr><td>EMA Cross</td><td class="mono">EMA 12/26 + ADX</td><td class="mono">тренд</td><td class="mono up">58%</td><td><span class="status-tag active">активна</span></td></tr>
+          <tr><td>Mean Reversion</td><td class="mono">RSI + Bollinger</td><td class="mono">флэт</td><td class="mono up">54%</td><td><span class="status-tag active">активна</span></td></tr>
+          <tr><td>Bollinger Squeeze</td><td class="mono">Bollinger Bands</td><td class="mono">пробой волатильности</td><td class="mono up">61%</td><td><span class="status-tag active">активна</span></td></tr>
+          <tr><td>Statistical Arbitrage</td><td class="mono">Z-Score, пары</td><td class="mono">парный трейдинг</td><td class="mono">49%</td><td><span class="status-tag paused">пауза</span></td></tr>
+          <tr><td>Trend Following Chop</td><td class="mono">Choppiness Index</td><td class="mono">тренд</td><td class="mono">45%</td><td><span class="status-tag paused">пауза</span></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-positions">
+      <h2 class="section-title">Открытые позиции</h2>
+      <div class="table-card">
+        <table class="data">
+          <tr><th>Пара</th><th>Сторона</th><th>Вход</th><th>Текущая</th><th>PnL</th></tr>
+          <tr><td class="mono">BTC/USDT</td><td><span class="side-tag long">LONG</span></td><td class="mono">64,200</td><td class="mono">65,010</td><td class="mono up">+1.26%</td></tr>
+          <tr><td class="mono">ETH/USDT</td><td><span class="side-tag short">SHORT</span></td><td class="mono">3,410</td><td class="mono">3,392</td><td class="mono up">+0.53%</td></tr>
+          <tr><td class="mono">SOL/USDT</td><td><span class="side-tag long">LONG</span></td><td class="mono">142.50</td><td class="mono">139.80</td><td class="mono down">-1.89%</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-history">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-lbl">Сделок за 30 дней</div>
+          <div class="kpi-val mono">142</div>
+          <div class="kpi-delta" style="color:var(--text-muted)">закрыто агентами</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Win-rate</div>
+          <div class="kpi-val mono up">57%</div>
+          <div class="kpi-delta up">81 прибыльных</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Суммарный PnL</div>
+          <div class="kpi-val mono up">+$2,340</div>
+          <div class="kpi-delta" style="color:var(--text-muted)">за 30 дней</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-lbl">Средняя сделка</div>
+          <div class="kpi-val mono">4ч 20м</div>
+          <div class="kpi-delta" style="color:var(--text-muted)">время в позиции</div>
+        </div>
+      </div>
+
+      <h2 class="section-title">Закрытые сделки</h2>
+      <div class="table-card">
+        <table class="data">
+          <tr><th>Дата</th><th>Пара</th><th>Сторона</th><th>Вход</th><th>Выход</th><th>PnL</th><th>Стратегия</th></tr>
+          <tr><td class="mono">23 июл, 18:12</td><td class="mono">BTC/USDT</td><td><span class="side-tag long">LONG</span></td><td class="mono">63,410</td><td class="mono">64,180</td><td class="mono up">+1.21%</td><td>EMA Cross</td></tr>
+          <tr><td class="mono">23 июл, 14:05</td><td class="mono">SOL/USDT</td><td><span class="side-tag short">SHORT</span></td><td class="mono">145.20</td><td class="mono">142.90</td><td class="mono up">+1.58%</td><td>Bollinger Squeeze</td></tr>
+          <tr><td class="mono">22 июл, 09:47</td><td class="mono">ETH/USDT</td><td><span class="side-tag long">LONG</span></td><td class="mono">3,380</td><td class="mono">3,344</td><td class="mono down">-1.07%</td><td>Mean Reversion</td></tr>
+          <tr><td class="mono">21 июл, 21:30</td><td class="mono">BTC/USDT</td><td><span class="side-tag short">SHORT</span></td><td class="mono">65,900</td><td class="mono">65,120</td><td class="mono up">+1.18%</td><td>Trend Following Chop</td></tr>
+          <tr><td class="mono">21 июл, 11:02</td><td class="mono">SOL/USDT</td><td><span class="side-tag long">LONG</span></td><td class="mono">138.40</td><td class="mono">136.90</td><td class="mono down">-1.08%</td><td>EMA Cross</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-signals">
+      <h2 class="section-title">Лента сигналов</h2>
+      <div class="table-card feed">
+        <div class="feed-row">
+          <span class="feed-time">12:41:03</span>
+          <span class="feed-pair">BTC/USDT</span>
+          <span class="side-tag long">LONG</span>
+          <span class="feed-conf">82%</span>
+          <span class="conf-bar"><span class="conf-bar-fill" style="width:82%"></span></span>
+        </div>
+        <div class="feed-row">
+          <span class="feed-time">12:39:47</span>
+          <span class="feed-pair">ETH/USDT</span>
+          <span class="side-tag short">SHORT</span>
+          <span class="feed-conf">74%</span>
+          <span class="conf-bar"><span class="conf-bar-fill" style="width:74%"></span></span>
+        </div>
+        <div class="feed-row">
+          <span class="feed-time">12:36:12</span>
+          <span class="feed-pair">SOL/USDT</span>
+          <span class="side-tag long">LONG</span>
+          <span class="feed-conf">65%</span>
+          <span class="conf-bar"><span class="conf-bar-fill" style="width:65%"></span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-logs">
+      <h2 class="section-title">Системный журнал</h2>
+      <div class="log-console">
+        <div class="log-line"><span class="log-ts">12:41:03</span><span class="log-tag info">INFO</span><span class="log-msg">orchestrator: <b>Market Data Agent</b> подключен к 4 биржам</span></div>
+        <div class="log-line"><span class="log-ts">12:40:51</span><span class="log-tag info">INFO</span><span class="log-msg">kraken_ema: сформирован сигнал <b>BTC/USDT LONG</b></span></div>
+        <div class="log-line"><span class="log-ts">12:38:20</span><span class="log-tag warn">WARN</span><span class="log-msg">risk_guard: плечо по <b>SOL/USDT</b> приближается к лимиту</span></div>
+        <div class="log-line"><span class="log-ts">12:35:09</span><span class="log-tag error">ERROR</span><span class="log-msg">bingx_client: signature mismatch <b>code 100001</b> при постановке ордера, повтор запроса</span></div>
+        <div class="log-line"><span class="log-ts">12:35:11</span><span class="log-tag info">INFO</span><span class="log-msg">bingx_client: ордер размещён после повторной подписи запроса</span></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-account">
+      <h2 class="section-title" style="margin-top:0;">Профиль</h2>
+      <div class="profile-card">
+        <div class="avatar">Ж</div>
+        <div>
+          <div class="profile-name">Женя</div>
+          <div class="profile-role">Владелец бота · с апреля 2025</div>
+        </div>
+        <span class="plan-tag">PRO</span>
+      </div>
+
+      <h2 class="section-title">Личная заначка</h2>
+      <div class="stash-card">
+        <div class="stash-main">
+          <div class="stash-lbl">Отложено с прибыли бота</div>
+          <div class="stash-val mono">$4,120.50</div>
+          <div class="stash-sub">автовывод 20% прибыли раз в неделю · след. вывод через 3 дня</div>
+        </div>
+        <div class="stash-actions">
+          <button class="btn">Вывести</button>
+          <button class="btn primary">Пополнить</button>
+        </div>
+      </div>
+
+      <h2 class="section-title">История операций</h2>
+      <div class="table-card">
+        <table class="data">
+          <tr><th>Дата</th><th>Тип</th><th>Сумма</th><th>Статус</th></tr>
+          <tr><td class="mono">18 июл</td><td>Автовывод прибыли</td><td class="mono up">+$310.00</td><td><span class="status-tag active">выполнено</span></td></tr>
+          <tr><td class="mono">11 июл</td><td>Автовывод прибыли</td><td class="mono up">+$275.50</td><td><span class="status-tag active">выполнено</span></td></tr>
+          <tr><td class="mono">04 июл</td><td>Ручное пополнение</td><td class="mono">$500.00</td><td><span class="status-tag active">выполнено</span></td></tr>
+        </table>
+      </div>
+
+      <div class="card-head-row">
+        <h2 class="section-title" style="margin-bottom:0;">Подключённые биржи</h2>
+        <button class="btn small primary" onclick="document.getElementById('connectModal').classList.add('open')">+ Добавить биржу</button>
+      </div>
+      <div class="mini-card" style="margin-top:12px;">
+        <div class="exchange-row">
+          <div class="exchange-icon" style="background:linear-gradient(135deg,#FFC750,#FF9F4A);">BX</div>
+          <div class="exchange-info">
+            <div class="exchange-name">BingX</div>
+            <div class="exchange-status on">подключено · Futures</div>
+          </div>
+          <span class="exchange-key mono">•••• 8f21</span>
+          <button class="btn small danger">Отключить</button>
+        </div>
+        <div class="exchange-row">
+          <div class="exchange-icon" style="background:linear-gradient(135deg,#3A3068,#28204F);color:var(--text-muted);">BN</div>
+          <div class="exchange-info">
+            <div class="exchange-name">Binance</div>
+            <div class="exchange-status">не подключено</div>
+          </div>
+          <button class="btn small">Подключить</button>
+        </div>
+        <div class="exchange-row">
+          <div class="exchange-icon" style="background:linear-gradient(135deg,#3A3068,#28204F);color:var(--text-muted);">BY</div>
+          <div class="exchange-info">
+            <div class="exchange-name">Bybit</div>
+            <div class="exchange-status">не подключено</div>
+          </div>
+          <button class="btn small">Подключить</button>
+        </div>
+        <div class="exchange-row">
+          <div class="exchange-icon" style="background:linear-gradient(135deg,#3A3068,#28204F);color:var(--text-muted);">OK</div>
+          <div class="exchange-info">
+            <div class="exchange-name">OKX</div>
+            <div class="exchange-status">не подключено</div>
+          </div>
+          <button class="btn small">Подключить</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="connectModal">
+      <div class="modal-box">
+        <div class="modal-title">Подключение биржи</div>
+        <label class="field-lbl">Биржа</label>
+        <select class="field-select">
+          <option>Binance</option>
+          <option>Bybit</option>
+          <option>OKX</option>
+        </select>
+        <label class="field-lbl">API key</label>
+        <input class="field-input" type="text" placeholder="вставьте API key">
+        <label class="field-lbl">API secret</label>
+        <input class="field-input" type="password" placeholder="вставьте API secret">
+        <div class="setting-hint" style="margin-bottom:14px;">Ключ используется только для торговли и чтения баланса, вывод средств отключите на стороне биржи.</div>
+        <div class="modal-actions">
+          <button class="btn" onclick="document.getElementById('connectModal').classList.remove('open')">Отмена</button>
+          <button class="btn primary" onclick="document.getElementById('connectModal').classList.remove('open')">Подключить</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-settings">
+      <h2 class="section-title" style="margin-top:0;">Управление риском</h2>
+      <div class="settings-card">
+        <div class="setting-row">
+          <div><div class="setting-lbl">Риск на сделку</div><div class="setting-hint">доля депозита на одну позицию</div></div>
+          <div class="slider-row"><input type="range" min="0.5" max="10" step="0.5" value="2"><span class="slider-val mono">2%</span></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-lbl">Максимальное плечо</div><div class="setting-hint">ограничение для всех агентов</div></div>
+          <div class="slider-row"><input type="range" min="1" max="20" step="1" value="5"><span class="slider-val mono">5x</span></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-lbl">Открытых позиций одновременно</div><div class="setting-hint">лимит для risk_guard</div></div>
+          <div class="slider-row"><input type="range" min="1" max="10" step="1" value="5"><span class="slider-val mono">5</span></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">Управление стратегиями</h2>
+      <div class="settings-card">
+        <div class="strategy-row">
+          <span class="priority-btns"><button>↑</button><button>↓</button></span>
+          <span class="name">EMA Cross <span class="tag">EMA 12/26 + ADX</span></span>
+          <label class="toggle"><input type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="strategy-row">
+          <span class="priority-btns"><button>↑</button><button>↓</button></span>
+          <span class="name">Bollinger Squeeze <span class="tag">Bollinger Bands</span></span>
+          <label class="toggle"><input type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="strategy-row">
+          <span class="priority-btns"><button>↑</button><button>↓</button></span>
+          <span class="name">Mean Reversion <span class="tag">RSI + Bollinger</span></span>
+          <label class="toggle"><input type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="strategy-row">
+          <span class="priority-btns"><button>↑</button><button>↓</button></span>
+          <span class="name">Statistical Arbitrage <span class="tag">Z-Score, пары</span></span>
+          <label class="toggle"><input type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="strategy-row">
+          <span class="priority-btns"><button>↑</button><button>↓</button></span>
+          <span class="name">Trend Following Chop <span class="tag">Choppiness Index</span></span>
+          <label class="toggle"><input type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="setting-hint" style="margin-top:10px;">Порядок определяет, чей сигнал побеждает при конфликте на одной паре.</div>
+      </div>
+
+      <h2 class="section-title">Торговые параметры</h2>
+      <div class="settings-card">
+        <div class="setting-row">
+          <div><div class="setting-lbl">Допуск на проскальзывание</div><div class="setting-hint">максимум перед отменой ордера</div></div>
+          <div class="slider-row"><input type="range" min="0.05" max="1" step="0.05" value="0.2"><span class="slider-val mono">0.2%</span></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-lbl">Таймаут ордера</div><div class="setting-hint">до автоотмены, если не исполнен</div></div>
+          <div class="slider-row"><input type="range" min="1" max="30" step="1" value="8"><span class="slider-val mono">8с</span></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-lbl">Автозакрытие по времени</div><div class="setting-hint">закрывать позицию, если висит дольше лимита</div></div>
+          <label class="toggle"><input type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-lbl">Trailing stop / безубыток</div><div class="setting-hint">переносить стоп в безубыток при +1R</div></div>
+          <label class="toggle"><input type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="setting-row" style="display:block;">
+          <div class="setting-lbl" style="margin-bottom:10px;">Чёрный список активов</div>
+          <div class="chip-list">
+            <span class="chip">SHIB<button aria-label="удалить">×</button></span>
+            <span class="chip">DOGE<button aria-label="удалить">×</button></span>
+            <span class="chip">PEPE<button aria-label="удалить">×</button></span>
+          </div>
+          <div class="chip-add">
+            <input class="field-input" style="margin-bottom:0;" type="text" placeholder="тикер, например BONK">
+            <button class="btn small">Добавить</button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-card">
+        <div class="setting-row">
+          <div><div class="setting-lbl">Telegram-алерты по сигналам</div><div class="setting-hint">каждый новый сигнал в чат</div></div>
+          <label class="toggle"><input type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-lbl">Уведомления об ошибках</div><div class="setting-hint">critical / error из логов</div></div>
+          <label class="toggle"><input type="checkbox" checked><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-lbl">Еженедельный отчёт на почту</div><div class="setting-hint">сводка по эквити и сделкам</div></div>
+          <label class="toggle"><input type="checkbox"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+      </div>
+
+      <h2 class="section-title">Опасная зона</h2>
+      <div class="settings-card" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="setting-lbl">Остановить всех агентов</div><div class="setting-hint">закроет позиции и переведёт бота в режим паузы</div></div>
+        <button class="btn danger">Остановить бота</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  const titles = {overview:'Обзор', agents:'Агенты', strategies:'Стратегии', positions:'Позиции', history:'История сделок', signals:'Сигналы', logs:'Логи', account:'Аккаунт', settings:'Настройки'};
+  function activateTab(tab){
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    const navItem = document.querySelector('.nav-item[data-tab="'+tab+'"]');
+    if(navItem){navItem.classList.add('active');}
+    document.getElementById('panel-'+tab).classList.add('active');
+    document.getElementById('pageTitle').textContent = titles[tab];
+    closeSidebar();
+  }
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  function openSidebar(){sidebar.classList.add('open');backdrop.classList.add('open');}
+  function closeSidebar(){sidebar.classList.remove('open');backdrop.classList.remove('open');}
+  document.getElementById('hamburgerBtn').addEventListener('click', openSidebar);
+  backdrop.addEventListener('click', closeSidebar);
+  document.querySelectorAll('.nav-item').forEach(item=>{
+    item.addEventListener('click', ()=>activateTab(item.dataset.tab));
+  });
+  document.getElementById('topProfile').addEventListener('click', ()=>{activateTab('account');});
+  document.getElementById('themeToggle').addEventListener('click', ()=>{
+    document.body.classList.toggle('light-theme');
+  });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const fetchDashboardData = async () => {
+            try {
+                const response = await fetch("/api/data/overview");
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // Update status pill
+                const statusPill = document.querySelector(".status-pill");
+                if (data.current_status === "Running") {
+                    statusPill.classList.remove("stopped");
+                    statusPill.classList.add("running");
+                    statusPill.querySelector("span").textContent = "LIVE";
+                } else {
+                    statusPill.classList.remove("running");
+                    statusPill.classList.add("stopped");
+                    statusPill.querySelector("span").textContent = "STOPPED";
+                }
+
+                // Update PnL
+                document.querySelector(".pnl-strip .num").textContent = `$${data.total_pnl.toFixed(2)}`;
+                document.querySelector(".pnl-strip .sub").textContent = `Daily: $${data.daily_pnl.toFixed(2)}`;
+
+                // Update bot status metrics
+                document.querySelector(".status-metric:nth-child(1) .num").textContent = data.total_trades;
+                document.querySelector(".status-metric:nth-child(2) .num").textContent = `${(data.win_rate * 100).toFixed(1)}%`;
+                document.querySelector(".status-metric:nth-child(3) .num").textContent = data.strategy_name || "N/A";
+
+                // Update balance and equity
+                document.querySelector(".stash-card .stash-val").textContent = `$${data.equity.toFixed(2)}`;
+                document.querySelector(".stash-card .stash-sub").textContent = `Balance: $${data.balance.toFixed(2)}`;
+
+                // Update active strategies (if applicable, currently using symbols)
+                const activeStrategiesList = document.getElementById("active-strategies-list");
+                if (activeStrategiesList) {
+                    activeStrategiesList.innerHTML = "";
+                    data.active_strategies.forEach(strat => {
+                        const li = document.createElement("li");
+                        li.textContent = strat;
+                        activeStrategiesList.appendChild(li);
+                    });
+                }
+
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+            }
+        };
+
+        fetchDashboardData();
+        setInterval(fetchDashboardData, 5000); // Refresh every 5 seconds
+    });
+</script>
+</body>
+</html>

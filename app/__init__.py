@@ -49,12 +49,16 @@ def create_app(config_name: str = "production") -> Flask:
     from blueprints.exchanges import exchanges_bp
     from blueprints.trading import trading_bp
     from blueprints.admin import admin_bp
+    from blueprints.dashboard import dashboard_bp
+    from blueprints.dashboard_api import dashboard_api_bp
 
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(exchanges_bp, url_prefix="/api/exchanges")
     app.register_blueprint(trading_bp, url_prefix="/api/trading")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(dashboard_api_bp)
 
     # === Error Handlers ===
     @app.errorhandler(404)
