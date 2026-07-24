@@ -122,7 +122,7 @@ class MeanReversionStrategy(BaseStrategy):
 
         return df
 
-    def _neutral(self, reason: str) -> Dict[str, Any]:
+    def _neutral(self, reason: str, strategy_name: str = "") -> Dict[str, Any]:
         return {
             "signal": "NEUTRAL",
             "confidence": 0,
