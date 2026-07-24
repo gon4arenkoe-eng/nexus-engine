@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from strategies.base import BaseStrategy
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class StatisticalArbitrageStrategy(BaseStrategy):
         std = ratio.rolling(window=self.z_score_period).std()
         z_score = (ratio - mean) / std
         current_z = z_score.iloc[-1]
-        
+
         signal = "NEUTRAL"
         confidence = 0
         if current_z > self.entry_threshold:
