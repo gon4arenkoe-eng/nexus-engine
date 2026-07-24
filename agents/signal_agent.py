@@ -57,7 +57,7 @@ class SignalAgent(BaseAgent):
                     selected_strategy_name = "statistical_arbitrage"
                 else:
                     logger.warning(
-                        f"SignalAgent: RANGING regime detected for {symbol}, but no pair data for statistical arbitrage. Falling back to EMA Cross."
+                        f"SignalAgent: RANGING {symbol} - no pair data. Using EMA Cross."
                     )
                     selected_strategy_name = "ema_cross"  # Fallback
             elif current_regime == "VOLATILE_SQUEEZE":
