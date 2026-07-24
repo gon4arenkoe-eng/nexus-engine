@@ -73,7 +73,7 @@ class Orchestrator(BaseAgent):
 
         try:
             # Step 1: Configuration
-            config_result = self.agents["config"].run(user_id)
+            config_result = await self.agents["config"].run(user_id)
             config = cast(Dict[str, Any], config_result)
             steps = cast(Dict[str, Any], results["steps"])
             steps["config"] = {"status": "ok", "symbols": config.get("symbols", [])}
@@ -92,7 +92,7 @@ class Orchestrator(BaseAgent):
             timeframe = config.get("timeframe", "4h")
 
             market_tasks = [
-                self.agents["market"].run(symbol, timeframe, exchange="bingx")
+                await self.agents["market"].run(symbol, timeframe, exchange="bingx")
                 for symbol in symbols
             ]
             market_data_list = await asyncio.gather(
@@ -105,7 +105,7 @@ class Orchestrator(BaseAgent):
                 if isinstance(market_data, Exception) or market_data is None:
                     continue
 
-                signal = self.agents["signal"].run(
+                signal = await self.agents["signal"].run(
                     market_data,
                     strategy_name=config.get("strategy", "ema_cross"),
                     confidence_threshold=config.get("confidence_threshold", 50),
@@ -116,7 +116,7 @@ class Orchestrator(BaseAgent):
 
                 # ML filter
                 if config.get("use_ml_filter", False):
-                    if not self.agents["ml"].run(signal, market_data):
+                    if not await self.agents["ml"].run(signal, market_data):
                         continue
 
                 # Risk check
@@ -128,7 +128,7 @@ class Orchestrator(BaseAgent):
                     balance.get("USDT", 0) if isinstance(balance, dict) else 0
                 )
 
-                risk_result = self.agents["risk"].run(
+                risk_result = await self.agents["risk"].run(
                     signal, user_id, balance=usdt_balance, open_positions=positions
                 )
 
@@ -176,7 +176,7 @@ class Orchestrator(BaseAgent):
 
             # Update positions and PnL
             positions = await self.agents["position"].run(user_id, exchange_id, client)
-            pnl = self.agents["pnl"].run(user_id, positions)
+            pnl = await self.agents["pnl"].run(user_id, positions)
 
             steps["positions"] = {"status": "ok", "count": len(positions)}
             steps["pnl"] = {"status": "ok", "daily_pnl": float(pnl) if pnl else 0}
