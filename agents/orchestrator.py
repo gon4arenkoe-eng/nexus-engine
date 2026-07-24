@@ -79,7 +79,7 @@ class Orchestrator(BaseAgent):
             steps["config"] = {"status": "ok", "symbols": config.get("symbols", [])}
 
             # Step 2: Get exchange client
-            client = await self.exchange_service.get_client(exchange_id)
+            client = self.exchange_service.get_client(exchange_id)
             if not client:
                 steps["exchange"] = {
                     "status": "error",
@@ -95,7 +95,7 @@ class Orchestrator(BaseAgent):
                 await self.agents["market"].run(symbol, timeframe, exchange="bingx")
                 for symbol in symbols
             ]
-            market_data_list = await asyncio.gather(
+            market_data_list = asyncio.gather(
                 *market_tasks, return_exceptions=True
             )
 
@@ -123,7 +123,7 @@ class Orchestrator(BaseAgent):
                 positions = await self.agents["position"].run(
                     user_id, exchange_id, client
                 )
-                balance = await client.get_balance()
+                balance = client.get_balance()
                 usdt_balance = (
                     balance.get("USDT", 0) if isinstance(balance, dict) else 0
                 )
@@ -160,7 +160,7 @@ class Orchestrator(BaseAgent):
 
                     notification_agent = self.agents["notification"]
                     if hasattr(notification_agent, "send_trade_notification"):
-                        await notification_agent.send_trade_notification(
+                        notification_agent.send_trade_notification(
                             user_id=user_id,
                             symbol=symbol,
                             side=signal["signal"],
@@ -197,10 +197,10 @@ class Orchestrator(BaseAgent):
         while self._running:
             try:
                 await self.run(user_id, exchange_id)
-                await asyncio.sleep(interval)
+                asyncio.sleep(interval)
             except Exception as e:
                 logger.error(f"Cycle error: {e}")
-                await asyncio.sleep(5)
+                asyncio.sleep(5)
 
     def stop(self):
         """Stop trading loop."""
