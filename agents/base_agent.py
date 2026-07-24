@@ -6,9 +6,9 @@ logger = logging.getLogger(__name__)
 
 
 class BaseAgent:
-    def __init__(self):
+    def __init__(self, name: Optional[str] = None):
         self.bus = get_bus()
-        self.name = self.__class__.__name__
+        self.name = name or self.__class__.__name__
         self._status = "initialized"
 
     async def run(self, *args, **kwargs) -> Any:
