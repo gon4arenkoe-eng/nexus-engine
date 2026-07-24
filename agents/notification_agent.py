@@ -21,7 +21,7 @@ class NotificationAgent(BaseAgent):
         self._telegram_bot_token = None
         self._telegram_chat_id = None
 
-    async def run(self, event: Dict[str, Any], **kwargs) -> bool:
+    def run(self, event: Dict[str, Any], **kwargs) -> bool:
         """Process and send notification for an event."""
         try:
             event_type = event.get("type", "unknown")

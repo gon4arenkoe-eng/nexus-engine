@@ -23,7 +23,7 @@ class PnLAgent(BaseAgent):
         self._daily_pnl_cache: Dict[int, Decimal] = {}
         self._last_update: Dict[int, datetime] = {}
 
-    async def run(self, user_id: int, positions: List[Dict[str, Any]], **kwargs) -> Optional[Decimal]:
+    def run(self, user_id: int, positions: List[Dict[str, Any]], **kwargs) -> Optional[Decimal]:
         """Calculate total unrealized PnL for open positions."""
         try:
             total_pnl = Decimal("0")

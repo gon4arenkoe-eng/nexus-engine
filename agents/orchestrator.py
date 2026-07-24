@@ -116,7 +116,7 @@ class Orchestrator(BaseAgent):
 
                 # ML filter
                 if config.get("use_ml_filter", False):
-                    if not await self.agents["ml"].run(signal, market_data):
+                    if not self.agents["ml"].run(signal, market_data):
                         continue
 
                 # Risk check
@@ -128,7 +128,7 @@ class Orchestrator(BaseAgent):
                     balance.get("USDT", 0) if isinstance(balance, dict) else 0
                 )
 
-                risk_result = await self.agents["risk"].run(
+                risk_result = self.agents["risk"].run(
                     signal, user_id, balance=usdt_balance, open_positions=positions
                 )
 
@@ -176,7 +176,7 @@ class Orchestrator(BaseAgent):
 
             # Update positions and PnL
             positions = await self.agents["position"].run(user_id, exchange_id, client)
-            pnl = await self.agents["pnl"].run(user_id, positions)
+            pnl = self.agents["pnl"].run(user_id, positions)
 
             steps["positions"] = {"status": "ok", "count": len(positions)}
             steps["pnl"] = {"status": "ok", "daily_pnl": float(pnl) if pnl else 0}
