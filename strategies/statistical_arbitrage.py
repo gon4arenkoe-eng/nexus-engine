@@ -32,7 +32,7 @@ class StatisticalArbitrageStrategy(BaseStrategy):
         self, data: pd.DataFrame, data_b: Optional[pd.DataFrame] = None, **kwargs
     ) -> Dict[str, Any]:
         # For statistical arbitrage, we need data for two symbols
-        if not self._validate_data(
+        if data_b is None or not self._validate_data(
             data, min_rows=self.z_score_period + 2
         ) or not self._validate_data(data_b, min_rows=self.z_score_period + 2):
             return self._neutral("Insufficient data for pair trading", self.description)
