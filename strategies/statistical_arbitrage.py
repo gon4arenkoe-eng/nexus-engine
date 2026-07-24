@@ -1,7 +1,7 @@
-import pandas as pd
-import numpy as np
+
+
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from strategies.base import BaseStrategy
 
 logger = logging.getLogger(__name__)
@@ -56,14 +56,14 @@ class StatisticalArbitrageStrategy(BaseStrategy):
         z_score = (ratio - mean) / std
 
         current_z = z_score.iloc[-1]
-        
+
         signal = "NEUTRAL"
         confidence = 0
 
         # Z-Score Logic:
         # If Z > threshold: Symbol A is overvalued relative to B -> Short A, Long B
         # If Z < -threshold: Symbol A is undervalued relative to B -> Long A, Short B
-        
+
         if current_z > self.entry_threshold:
             signal = "SELL"  # Short A (relative to B)
             confidence = min(100, int((abs(current_z) / self.entry_threshold) * 50))
