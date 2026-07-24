@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import Dict, Any
 
+
 class BaseStrategy:
     description: str = "Base Strategy"
 

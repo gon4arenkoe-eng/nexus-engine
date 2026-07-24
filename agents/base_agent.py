@@ -5,6 +5,7 @@ from nexus_bus import get_bus
 
 logger = logging.getLogger(__name__)
 
+
 class BaseAgent(ABC):
     def __init__(self):
         self.bus = get_bus()
@@ -27,7 +28,10 @@ class BaseAgent(ABC):
         logger.error(f"Agent {self.name} error in {context or 'unknown context'}: {error}")
 
     def _validate_data(self, data: Any, min_rows: int) -> bool:
-        if data is None: return False
-        if hasattr(data, 'empty') and data.empty: return False
-        if hasattr(data, '__len__') and len(data) < min_rows: return False
+        if data is None:
+            return False
+        if hasattr(data, 'empty') and data.empty:
+            return False
+        if hasattr(data, '__len__') and len(data) < min_rows:
+            return False
         return True
