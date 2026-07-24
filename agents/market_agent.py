@@ -34,14 +34,17 @@ class MarketAgent(BaseAgent):
             )
         return self._session
 
-    async def run(self, symbol: str, timeframe: str,
-                  exchange: str = "bingx", limit: int = 100) -> Optional[pd.DataFrame]:
+    async def run(
+        self, symbol: str, timeframe: str, exchange: str = "bingx", limit: int = 100
+    ) -> Optional[pd.DataFrame]:
         """Fetch OHLCV candles for a symbol."""
         cache_key = f"{exchange}:{symbol}:{timeframe}"
 
         if cache_key in self._cache:
             cached = self._cache[cache_key]
-            if datetime.utcnow() - cached["timestamp"] < timedelta(seconds=self._cache_ttl):
+            if datetime.utcnow() - cached["timestamp"] < timedelta(
+                seconds=self._cache_ttl
+            ):
                 self._record_run()
                 return cached["data"]
 
@@ -71,8 +74,9 @@ class MarketAgent(BaseAgent):
             self._handle_error(e)
             return None
 
-    async def _fetch_bingx_klines(self, symbol: str,
-                                  timeframe: str, limit: int) -> List[List]:
+    async def _fetch_bingx_klines(
+        self, symbol: str, timeframe: str, limit: int
+    ) -> List[List]:
         """Fetch klines from BingX API."""
         session = await self._get_session()
 
@@ -92,7 +96,7 @@ class MarketAgent(BaseAgent):
             return result.get("data", [])
 
     async def _fetch_binance_klines(
-            self, symbol: str, timeframe: str, limit: int
+        self, symbol: str, timeframe: str, limit: int
     ) -> List[List]:
         """Fetch klines from Binance API."""
         session = await self._get_session()
@@ -114,16 +118,39 @@ class MarketAgent(BaseAgent):
     def _normalize_ohlcv(self, data: List[List], exchange: str) -> pd.DataFrame:
         """Normalize exchange-specific format to standard DataFrame."""
         if exchange == "bingx":
-            df = pd.DataFrame(data, columns=[
-                "timestamp", "open", "high", "low", "close", "volume",
-                "quote_volume", "taker_buy_volume", "taker_buy_quote", "ignore"
-            ])
+            df = pd.DataFrame(
+                data,
+                columns=[
+                    "timestamp",
+                    "open",
+                    "high",
+                    "low",
+                    "close",
+                    "volume",
+                    "quote_volume",
+                    "taker_buy_volume",
+                    "taker_buy_quote",
+                    "ignore",
+                ],
+            )
         else:
-            df = pd.DataFrame(data, columns=[
-                "timestamp", "open", "high", "low", "close", "volume",
-                "close_time", "quote_volume", "trades", "taker_buy_volume",
-                "taker_buy_quote", "ignore"
-            ])
+            df = pd.DataFrame(
+                data,
+                columns=[
+                    "timestamp",
+                    "open",
+                    "high",
+                    "low",
+                    "close",
+                    "volume",
+                    "close_time",
+                    "quote_volume",
+                    "trades",
+                    "taker_buy_volume",
+                    "taker_buy_quote",
+                    "ignore",
+                ],
+            )
 
         numeric_cols = ["open", "high", "low", "close", "volume"]
         for col in numeric_cols:
@@ -137,14 +164,27 @@ class MarketAgent(BaseAgent):
     def _convert_timeframe(self, tf: str) -> str:
         """Convert timeframe to exchange-specific format."""
         mapping = {
-            "1m": "1m", "3m": "3m", "5m": "5m", "15m": "15m", "30m": "30m",
-            "1h": "1h", "2h": "2h", "4h": "4h", "6h": "6h", "8h": "8h",
-            "12h": "12h", "1d": "1d", "3d": "3d", "1w": "1w", "1M": "1M",
+            "1m": "1m",
+            "3m": "3m",
+            "5m": "5m",
+            "15m": "15m",
+            "30m": "30m",
+            "1h": "1h",
+            "2h": "2h",
+            "4h": "4h",
+            "6h": "6h",
+            "8h": "8h",
+            "12h": "12h",
+            "1d": "1d",
+            "3d": "3d",
+            "1w": "1w",
+            "1M": "1M",
         }
         return mapping.get(tf, tf)
 
-    async def get_current_price(self, symbol: str,
-                                exchange: str = "bingx") -> Optional[float]:
+    async def get_current_price(
+        self, symbol: str, exchange: str = "bingx"
+    ) -> Optional[float]:
         """Get current market price."""
         try:
             session = await self._get_session()

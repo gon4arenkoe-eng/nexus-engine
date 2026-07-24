@@ -8,7 +8,9 @@ class Position(db.Model):  # type: ignore[name-defined]
     __tablename__ = "positions"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
+    )
     exchange_id = db.Column(db.Integer, db.ForeignKey("exchanges.id"), nullable=False)
 
     symbol = db.Column(db.String(50), nullable=False, index=True)

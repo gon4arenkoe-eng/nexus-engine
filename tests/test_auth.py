@@ -1,4 +1,5 @@
 """Auth tests."""
+
 import pytest
 from app import create_app
 
@@ -19,40 +20,55 @@ def client(app):
 
 def test_register_success(client):
     """Test successful registration."""
-    response = client.post("/api/auth/register", json={
-        "username": "testuser",
-        "email": "test@example.com",
-        "password": "securepassword123",
-    })
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        },
+    )
     assert response.status_code == 201
 
 
 def test_register_duplicate(client):
     """Test duplicate username rejection."""
-    client.post("/api/auth/register", json={
-        "username": "testuser",
-        "email": "test1@example.com",
-        "password": "securepassword123",
-    })
-    response = client.post("/api/auth/register", json={
-        "username": "testuser",
-        "email": "test2@example.com",
-        "password": "securepassword123",
-    })
+    client.post(
+        "/api/auth/register",
+        json={
+            "username": "testuser",
+            "email": "test1@example.com",
+            "password": "securepassword123",
+        },
+    )
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": "testuser",
+            "email": "test2@example.com",
+            "password": "securepassword123",
+        },
+    )
     assert response.status_code == 409
 
 
 def test_login_success(client):
     """Test successful login with cookies."""
-    client.post("/api/auth/register", json={
-        "username": "testuser",
-        "email": "test@example.com",
-        "password": "securepassword123",
-    })
-    response = client.post("/api/auth/login", json={
-        "username": "testuser",
-        "password": "securepassword123",
-    })
+    client.post(
+        "/api/auth/register",
+        json={
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "securepassword123",
+        },
+    )
+    response = client.post(
+        "/api/auth/login",
+        json={
+            "username": "testuser",
+            "password": "securepassword123",
+        },
+    )
     assert response.status_code == 200
     set_cookie_headers = response.headers.getlist("Set-Cookie")
     assert any("access_token" in h for h in set_cookie_headers)
@@ -60,10 +76,13 @@ def test_login_success(client):
 
 def test_login_invalid(client):
     """Test login with wrong password."""
-    response = client.post("/api/auth/login", json={
-        "username": "testuser",
-        "password": "wrongpassword",
-    })
+    response = client.post(
+        "/api/auth/login",
+        json={
+            "username": "testuser",
+            "password": "wrongpassword",
+        },
+    )
     assert response.status_code == 401
 
 

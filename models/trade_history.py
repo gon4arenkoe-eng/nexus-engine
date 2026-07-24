@@ -8,7 +8,9 @@ class TradeHistory(db.Model):  # type: ignore[name-defined]
     __tablename__ = "trade_history"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False, index=True
+    )
     exchange_id = db.Column(db.Integer, db.ForeignKey("exchanges.id"), nullable=False)
     position_id = db.Column(db.Integer, db.ForeignKey("positions.id"), nullable=True)
 

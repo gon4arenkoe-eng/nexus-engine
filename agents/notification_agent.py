@@ -40,8 +40,9 @@ class NotificationAgent(BaseAgent):
             self._handle_error(e)
             return False
 
-    def send_trade_notification(self, user_id: int, symbol: str,
-                                side: str, size: float, price: float) -> bool:
+    def send_trade_notification(
+        self, user_id: int, symbol: str, side: str, size: float, price: float
+    ) -> bool:
         """Send notification about executed trade."""
         message = (
             "Trade Executed\n"
@@ -58,8 +59,7 @@ class NotificationAgent(BaseAgent):
 
         return True
 
-    def send_risk_alert(self, user_id: int, alert_type: str,
-                        message: str) -> bool:
+    def send_risk_alert(self, user_id: int, alert_type: str, message: str) -> bool:
         """Send risk management alert."""
         full_message = "Risk Alert: " + alert_type + "\n" + message
         logger.warning(full_message)
@@ -83,7 +83,11 @@ class NotificationAgent(BaseAgent):
         try:
             import requests  # type: ignore[import]
 
-            url = "https://api.telegram.org/bot" + self._telegram_bot_token + "/sendMessage"
+            url = (
+                "https://api.telegram.org/bot"
+                + self._telegram_bot_token
+                + "/sendMessage"
+            )
             payload = {
                 "chat_id": self._telegram_chat_id,
                 "text": message,

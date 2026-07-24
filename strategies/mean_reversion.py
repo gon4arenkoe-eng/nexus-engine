@@ -27,8 +27,14 @@ class MeanReversionStrategy(BaseStrategy):
 
     description = "Mean Reversion (RSI + Bollinger Bands)"
 
-    def __init__(self, rsi_period: int = 14, rsi_oversold: int = 30, rsi_overbought: int = 70,
-                 bb_period: int = 20, bb_std: float = 2.0):
+    def __init__(
+        self,
+        rsi_period: int = 14,
+        rsi_oversold: int = 30,
+        rsi_overbought: int = 70,
+        bb_period: int = 20,
+        bb_std: float = 2.0,
+    ):
         self.rsi_period = rsi_period
         self.rsi_oversold = rsi_oversold
         self.rsi_overbought = rsi_overbought
@@ -53,13 +59,19 @@ class MeanReversionStrategy(BaseStrategy):
         confidence = 0
 
         # BUY: RSI oversold + price at lower band
-        if current["rsi"] < self.rsi_oversold and current["close"] <= current["bb_lower"]:
+        if (
+            current["rsi"] < self.rsi_oversold
+            and current["close"] <= current["bb_lower"]
+        ):
             signal = "BUY"
             # Confidence based on how oversold
             confidence = min(50 + int(self.rsi_oversold - current["rsi"]) * 2, 95)
 
         # SELL: RSI overbought + price at upper band
-        elif current["rsi"] > self.rsi_overbought and current["close"] >= current["bb_upper"]:
+        elif (
+            current["rsi"] > self.rsi_overbought
+            and current["close"] >= current["bb_upper"]
+        ):
             signal = "SELL"
             confidence = min(50 + int(current["rsi"] - self.rsi_overbought) * 2, 95)
 
@@ -80,8 +92,8 @@ class MeanReversionStrategy(BaseStrategy):
                 "levels": {
                     "sl_pct": 0.015,  # Tighter SL for mean reversion
                     "tp_pct": 0.03,
-                }
-            }
+                },
+            },
         }
 
     def _calculate_rsi(self, df: pd.DataFrame, period: int) -> pd.DataFrame:
@@ -98,7 +110,9 @@ class MeanReversionStrategy(BaseStrategy):
 
         return df
 
-    def _calculate_bollinger(self, df: pd.DataFrame, period: int, std: float) -> pd.DataFrame:
+    def _calculate_bollinger(
+        self, df: pd.DataFrame, period: int, std: float
+    ) -> pd.DataFrame:
         """Calculate Bollinger Bands."""
         df["bb_middle"] = df["close"].rolling(window=period).mean()
         df["bb_std"] = df["close"].rolling(window=period).std()
@@ -118,9 +132,24 @@ class MeanReversionStrategy(BaseStrategy):
 
     def get_parameters(self) -> Dict[str, Any]:
         return {
-            "rsi_period": {"value": self.rsi_period, "type": "int", "min": 7, "max": 30},
-            "rsi_oversold": {"value": self.rsi_oversold, "type": "int", "min": 10, "max": 40},
-            "rsi_overbought": {"value": self.rsi_overbought, "type": "int", "min": 60, "max": 90},
+            "rsi_period": {
+                "value": self.rsi_period,
+                "type": "int",
+                "min": 7,
+                "max": 30,
+            },
+            "rsi_oversold": {
+                "value": self.rsi_oversold,
+                "type": "int",
+                "min": 10,
+                "max": 40,
+            },
+            "rsi_overbought": {
+                "value": self.rsi_overbought,
+                "type": "int",
+                "min": 60,
+                "max": 90,
+            },
             "bb_period": {"value": self.bb_period, "type": "int", "min": 10, "max": 50},
             "bb_std": {"value": self.bb_std, "type": "float", "min": 1.0, "max": 4.0},
         }

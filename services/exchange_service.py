@@ -1,4 +1,5 @@
 import logging
+
 """
 V10 NEXUS Swarm — Exchange Service
 ===================================
@@ -11,6 +12,7 @@ from models import Exchange
 from utils.crypto_utils import get_crypto_manager
 from clients import BingXClient, BinanceClient, BybitClient, OKXClient
 from app import db
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,8 +36,15 @@ class ExchangeService:
     def __init__(self):
         self._clients: Dict[int, Any] = {}  # exchange_id -> client instance
 
-    def add_exchange(self, user_id: int, name: str, api_key: str, api_secret: str,
-                     passphrase: Optional[str] = None, is_demo: bool = True) -> Dict[str, Any]:
+    def add_exchange(
+        self,
+        user_id: int,
+        name: str,
+        api_key: str,
+        api_secret: str,
+        passphrase: Optional[str] = None,
+        is_demo: bool = True,
+    ) -> Dict[str, Any]:
         """
         Add new exchange connection.
 
@@ -51,7 +60,9 @@ class ExchangeService:
             crypto = get_crypto_manager()
             encrypted_key = crypto.encrypt(api_key.strip())
             encrypted_secret = crypto.encrypt(api_secret.strip())
-            encrypted_passphrase = crypto.encrypt(passphrase.strip()) if passphrase else None
+            encrypted_passphrase = (
+                crypto.encrypt(passphrase.strip()) if passphrase else None
+            )
 
             # Create exchange record
             exchange = Exchange(
@@ -130,7 +141,11 @@ class ExchangeService:
         try:
             api_key = crypto.decrypt(exchange.api_key_encrypted)
             api_secret = crypto.decrypt(exchange.api_secret_encrypted)
-            passphrase = crypto.decrypt(exchange.passphrase_encrypted) if exchange.passphrase_encrypted else None
+            passphrase = (
+                crypto.decrypt(exchange.passphrase_encrypted)
+                if exchange.passphrase_encrypted
+                else None
+            )
         except Exception as e:
             logger.error(f"Client init error: {e}")
             return None
@@ -167,6 +182,7 @@ class ExchangeService:
             exchange = Exchange.query.get(exchange_id)
             if exchange:
                 from datetime import datetime
+
                 exchange.last_connected = datetime.utcnow()
                 db.session.commit()
 

@@ -1,4 +1,5 @@
 """Risk agent tests."""
+
 import pytest
 from unittest.mock import patch, MagicMock
 from agents.risk_agent import RiskAgent
@@ -24,7 +25,11 @@ def test_approve_valid(mock_settings, risk_agent):
         "confidence": 75,
         "metadata": {"symbol": "BTCUSDT", "current_price": 65000},
     }
-    with patch.object(risk_agent, '_get_daily_pnl', return_value=MagicMock(__le__=lambda self, other: False)):
+    with patch.object(
+        risk_agent,
+        "_get_daily_pnl",
+        return_value=MagicMock(__le__=lambda self, other: False),
+    ):
         result = risk_agent.run(
             signal=signal, user_id=1, balance=10000, open_positions=[]
         )

@@ -17,23 +17,25 @@ class User(db.Model):  # type: ignore[name-defined]
     last_login = db.Column(db.DateTime, nullable=True)
 
     # Relationships
-    exchanges = db.relationship("Exchange", backref="user", lazy="dynamic", cascade="all, delete-orphan")
-    bot_settings = db.relationship("BotSettings", backref="user", uselist=False, cascade="all, delete-orphan")
+    exchanges = db.relationship(
+        "Exchange", backref="user", lazy="dynamic", cascade="all, delete-orphan"
+    )
+    bot_settings = db.relationship(
+        "BotSettings", backref="user", uselist=False, cascade="all, delete-orphan"
+    )
     positions = db.relationship("Position", backref="user", lazy="dynamic")
     trade_history = db.relationship("TradeHistory", backref="user", lazy="dynamic")
 
     def set_password(self, password: str) -> None:
         """Hash password with bcrypt."""
         self.password_hash = bcrypt.hashpw(
-            password.encode("utf-8"),
-            bcrypt.gensalt(rounds=12)
+            password.encode("utf-8"), bcrypt.gensalt(rounds=12)
         ).decode("utf-8")
 
     def check_password(self, password: str) -> bool:
         """Verify password against hash."""
         return bcrypt.checkpw(
-            password.encode("utf-8"),
-            self.password_hash.encode("utf-8")
+            password.encode("utf-8"), self.password_hash.encode("utf-8")
         )
 
     def to_dict(self) -> dict:

@@ -44,14 +44,17 @@ class SentimentAgent(BaseAgent):
             # Check cache
             if self._cache and self._last_fetch:
                 from datetime import datetime, timedelta
-                if datetime.utcnow() - self._last_fetch < timedelta(seconds=self._cache_ttl):
+
+                if datetime.utcnow() - self._last_fetch < timedelta(
+                    seconds=self._cache_ttl
+                ):
                     return self._cache
 
             # Fetch Fear & Greed Index
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                     "https://api.alternative.me/fng/",
-                    timeout=aiohttp.ClientTimeout(total=10)
+                    timeout=aiohttp.ClientTimeout(total=10),
                 ) as resp:
                     if resp.status != 200:
                         raise RuntimeError(f"Fear & Greed API error: {resp.status}")
@@ -62,7 +65,7 @@ class SentimentAgent(BaseAgent):
                         "fear_greed_index": int(data["data"][0]["value"]),
                         "classification": data["data"][0]["value_classification"],
                         "timestamp": data["data"][0]["timestamp"],
-                        "source": "alternative.me"
+                        "source": "alternative.me",
                     }
 
                     self._cache = result
@@ -77,7 +80,7 @@ class SentimentAgent(BaseAgent):
                 "classification": "Neutral",
                 "timestamp": datetime.utcnow().isoformat(),
                 "source": "fallback",
-                "error": str(e)
+                "error": str(e),
             }
 
     def is_bullish(self, sentiment: Dict) -> bool:

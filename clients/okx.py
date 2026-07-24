@@ -28,7 +28,9 @@ class OKXClient(BaseExchangeClient):
             return "https://www.okx.com"
         return "https://www.okx.com"
 
-    def _sign_request(self, method: str, endpoint: str, params: Dict[str, Any]) -> Dict[str, str]:
+    def _sign_request(
+        self, method: str, endpoint: str, params: Dict[str, Any]
+    ) -> Dict[str, str]:
         """Generate OKX signature."""
         timestamp = time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime())
 
@@ -36,14 +38,13 @@ class OKXClient(BaseExchangeClient):
             body = ""
         else:
             import json
+
             body = json.dumps(params) if params else ""
 
         message = timestamp + method.upper() + endpoint + body
         signature = base64.b64encode(
             hmac.new(
-                self.api_secret.encode("utf-8"),
-                message.encode("utf-8"),
-                hashlib.sha256
+                self.api_secret.encode("utf-8"), message.encode("utf-8"), hashlib.sha256
             ).digest()
         ).decode("utf-8")
 
@@ -58,7 +59,9 @@ class OKXClient(BaseExchangeClient):
 
         return headers
 
-    async def get_klines(self, symbol: str, interval: str, limit: int = 100) -> List[List]:
+    async def get_klines(
+        self, symbol: str, interval: str, limit: int = 100
+    ) -> List[List]:
         params = {
             "instId": symbol,
             "bar": interval,
@@ -86,9 +89,15 @@ class OKXClient(BaseExchangeClient):
             }
         return result if isinstance(result, dict) else {"error": "Invalid response"}
 
-    async def place_order(self, symbol: str, side: str, size: float,
-                          order_type: str = "MARKET", price: Optional[float] = None,
-                          leverage: int = 1) -> Dict[str, Any]:
+    async def place_order(
+        self,
+        symbol: str,
+        side: str,
+        size: float,
+        order_type: str = "MARKET",
+        price: Optional[float] = None,
+        leverage: int = 1,
+    ) -> Dict[str, Any]:
         params = {
             "instId": symbol,
             "tdMode": "cross",  # Cross margin
@@ -118,11 +127,15 @@ class OKXClient(BaseExchangeClient):
             "instId": symbol,
             "ordId": order_id,
         }
-        return await self._request("POST", "/api/v5/trade/cancel-order", params, signed=True)
+        return await self._request(
+            "POST", "/api/v5/trade/cancel-order", params, signed=True
+        )
 
     async def get_balance(self) -> Dict[str, Any]:
         params = {"ccy": "USDT"}
-        result = await self._request("GET", "/api/v5/account/balance", params, signed=True)
+        result = await self._request(
+            "GET", "/api/v5/account/balance", params, signed=True
+        )
 
         if isinstance(result, dict) and "error" not in result:
             balances = {}
@@ -137,7 +150,9 @@ class OKXClient(BaseExchangeClient):
 
     async def get_positions(self) -> Optional[List[Dict[str, Any]]]:
         params = {"instType": "SWAP"}
-        result = await self._request("GET", "/api/v5/account/positions", params, signed=True)
+        result = await self._request(
+            "GET", "/api/v5/account/positions", params, signed=True
+        )
 
         if isinstance(result, dict) and "error" not in result:
             positions = []
@@ -146,15 +161,17 @@ class OKXClient(BaseExchangeClient):
                 if size == 0:
                     continue
 
-                positions.append({
-                    "symbol": pos.get("instId", ""),
-                    "side": "LONG" if size > 0 else "SHORT",
-                    "size": abs(size),
-                    "entry_price": float(pos.get("avgPx", 0) or 0),
-                    "leverage": int(pos.get("lever", 1) or 1),
-                    "unrealized_pnl": float(pos.get("upl", 0) or 0),
-                    "order_id": pos.get("posId", ""),
-                })
+                positions.append(
+                    {
+                        "symbol": pos.get("instId", ""),
+                        "side": "LONG" if size > 0 else "SHORT",
+                        "size": abs(size),
+                        "entry_price": float(pos.get("avgPx", 0) or 0),
+                        "leverage": int(pos.get("lever", 1) or 1),
+                        "unrealized_pnl": float(pos.get("upl", 0) or 0),
+                        "order_id": pos.get("posId", ""),
+                    }
+                )
             return positions
 
         logger.error(f"Failed to fetch positions: {result}")

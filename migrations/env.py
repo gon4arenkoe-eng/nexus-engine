@@ -4,6 +4,8 @@ ALEMBIC ENV
 Конфигурация окружения Alembic для миграций.
 """
 
+from models import User, Exchange, Position, BotSettings, SentOrder, TradeHistory
+from app import db
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
@@ -14,8 +16,6 @@ from typing import Dict, Any
 # Добавляем корень проекта в PATH
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import db
-from models import User, Exchange, Position, BotSettings, SentOrder, TradeHistory
 
 # this is the Alembic Config object
 config = context.config
@@ -30,6 +30,7 @@ target_metadata = db.Model.metadata
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
+
 
 def get_database_url():
     """Get database URL from environment."""

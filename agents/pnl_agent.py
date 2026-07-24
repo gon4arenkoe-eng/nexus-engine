@@ -49,13 +49,11 @@ class PnLAgent(BaseAgent):
 
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         trades = TradeHistory.query.filter(
-            TradeHistory.user_id == user_id,
-            TradeHistory.executed_at >= today
+            TradeHistory.user_id == user_id, TradeHistory.executed_at >= today
         ).all()
 
         total_pnl = sum(
-            (t.pnl or 0) + (t.commission or 0) + (t.funding_fee or 0)
-            for t in trades
+            (t.pnl or 0) + (t.commission or 0) + (t.funding_fee or 0) for t in trades
         )
 
         self._daily_pnl_cache[user_id] = Decimal(str(total_pnl))
@@ -68,8 +66,7 @@ class PnLAgent(BaseAgent):
         trades = TradeHistory.query.filter_by(user_id=user_id).all()
 
         total_pnl = sum(
-            (t.pnl or 0) + (t.commission or 0) + (t.funding_fee or 0)
-            for t in trades
+            (t.pnl or 0) + (t.commission or 0) + (t.funding_fee or 0) for t in trades
         )
 
         return Decimal(str(total_pnl))

@@ -14,6 +14,7 @@ from typing import Callable, Dict, List, Any
 
 logger = logging.getLogger(__name__)
 
+
 class NexusBus:
     """
     In-memory event bus for agent communication.
@@ -32,13 +33,13 @@ class NexusBus:
     def subscribe(self, topic: str, callback: Callable[[Any], None]) -> None:
         """Subscribe callback to a topic."""
         self._subscribers[topic].append(callback)
-        logger.debug(f"Subscribed to topic \'{topic}\': {callback.__name__}")
+        logger.debug(f"Subscribed to topic '{topic}': {callback.__name__}")
 
     def unsubscribe(self, topic: str, callback: Callable[[Any], None]) -> None:
         """Unsubscribe callback from a topic."""
         if callback in self._subscribers[topic]:
             self._subscribers[topic].remove(callback)
-            logger.debug(f"Unsubscribed from topic \'{topic}\': {callback.__name__}")
+            logger.debug(f"Unsubscribed from topic '{topic}': {callback.__name__}")
 
     def publish(self, topic: str, message: Any) -> None:
         """
@@ -49,7 +50,7 @@ class NexusBus:
         callbacks = self._subscribers.get(topic, [])
 
         if not callbacks:
-            logger.warning(f"No subscribers for topic \'{topic}\'")
+            logger.warning(f"No subscribers for topic '{topic}'")
             return
 
         for callback in callbacks:
@@ -57,7 +58,9 @@ class NexusBus:
                 callback(message)
             except Exception as e:
                 self._error_count += 1
-                logger.error(f"Error in callback for topic \'{topic}\': {e}", exc_info=True)
+                logger.error(
+                    f"Error in callback for topic '{topic}': {e}", exc_info=True
+                )
 
     def get_stats(self) -> Dict[str, Any]:
         """Return bus statistics."""
@@ -68,8 +71,10 @@ class NexusBus:
             "total_errors": self._error_count,
         }
 
-  # Singleton instance
+
+# Singleton instance
 _bus: NexusBus | None = None
+
 
 def get_bus() -> NexusBus:
     """Get or create global bus instance."""

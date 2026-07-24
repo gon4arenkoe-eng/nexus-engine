@@ -1,11 +1,11 @@
 """Trading blueprint."""
+
 import asyncio
 from flask import Blueprint, request, jsonify
 from services.auth_service import require_auth
 from services.exchange_service import ExchangeService
 from services.trading_service import TradingService
 from models import BotSettings
-
 
 trading_bp = Blueprint("trading", __name__)
 trading_service = TradingService()
@@ -21,9 +21,7 @@ def get_positions():
         return jsonify({"error": "No active exchange"}), 400
 
     positions = asyncio.run(
-        trading_service.position_agent.run(
-            request.current_user.id, exchange.id, None
-        )
+        trading_service.position_agent.run(request.current_user.id, exchange.id, None)
     )
 
     return jsonify({"positions": positions})
@@ -59,17 +57,17 @@ def get_pnl():
         return jsonify({"error": "No active exchange"}), 400
 
     positions = asyncio.run(
-        trading_service.position_agent.run(
-            request.current_user.id, exchange.id, None
-        )
+        trading_service.position_agent.run(request.current_user.id, exchange.id, None)
     )
 
     pnl = trading_service.pnl_agent.run(request.current_user.id, positions)
 
-    return jsonify({
-        "daily_pnl": float(pnl) if pnl else 0,
-        "positions_count": len(positions),
-    })
+    return jsonify(
+        {
+            "daily_pnl": float(pnl) if pnl else 0,
+            "positions_count": len(positions),
+        }
+    )
 
 
 @trading_bp.route("/bot/start", methods=["POST"])
@@ -131,9 +129,16 @@ def update_settings():
         return jsonify({"error": "No settings found"}), 404
 
     allowed = [
-        "symbols", "timeframe", "confidence_threshold", "max_positions",
-        "max_leverage", "daily_loss_limit", "position_size_pct",
-        "strategy", "use_ml_filter", "use_sentiment",
+        "symbols",
+        "timeframe",
+        "confidence_threshold",
+        "max_positions",
+        "max_leverage",
+        "daily_loss_limit",
+        "position_size_pct",
+        "strategy",
+        "use_ml_filter",
+        "use_sentiment",
     ]
 
     for key in allowed:
@@ -141,6 +146,7 @@ def update_settings():
             setattr(settings, key, data[key])
 
     from app import db
+
     db.session.commit()
 
     trading_service.config_agent.invalidate_cache(request.current_user.id)

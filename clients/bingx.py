@@ -30,7 +30,9 @@ class BingXClient(BaseExchangeClient):
             return "https://open-api-vst.bingx.com"
         return "https://open-api.bingx.com"
 
-    def _sign_request(self, method: str, endpoint: str, params: Dict[str, Any]) -> Dict[str, str]:
+    def _sign_request(
+        self, method: str, endpoint: str, params: Dict[str, Any]
+    ) -> Dict[str, str]:
         """Generate BingX signature."""
         timestamp = str(int(time.time() * 1000))
 
@@ -45,7 +47,7 @@ class BingXClient(BaseExchangeClient):
         signature = hmac.new(
             self.api_secret.encode("utf-8"),
             signature_payload.encode("utf-8"),
-            hashlib.sha256
+            hashlib.sha256,
         ).hexdigest()
 
         return {
@@ -55,7 +57,9 @@ class BingXClient(BaseExchangeClient):
         }
 
     # === Market Data (Public) ===
-    async def get_klines(self, symbol: str, interval: str, limit: int = 100) -> List[List]:
+    async def get_klines(
+        self, symbol: str, interval: str, limit: int = 100
+    ) -> List[List]:
         """Fetch klines/candles."""
         params = {
             "symbol": symbol,
@@ -91,9 +95,15 @@ class BingXClient(BaseExchangeClient):
         }
 
     # === Trading (Signed) ===
-    async def place_order(self, symbol: str, side: str, size: float,
-                          order_type: str = "MARKET", price: Optional[float] = None,
-                          leverage: int = 1) -> Dict[str, Any]:
+    async def place_order(
+        self,
+        symbol: str,
+        side: str,
+        size: float,
+        order_type: str = "MARKET",
+        price: Optional[float] = None,
+        leverage: int = 1,
+    ) -> Dict[str, Any]:
         """Place order on BingX."""
         params = {
             "symbol": symbol,
@@ -106,7 +116,9 @@ class BingXClient(BaseExchangeClient):
         if order_type.upper() == "LIMIT" and price:
             params["price"] = price
 
-        result = await self._request("POST", "/openApi/swap/v2/trade/order", params, signed=True)
+        result = await self._request(
+            "POST", "/openApi/swap/v2/trade/order", params, signed=True
+        )
 
         if "error" in result:
             return result
@@ -128,12 +140,16 @@ class BingXClient(BaseExchangeClient):
             "symbol": symbol,
             "orderId": order_id,
         }
-        return await self._request("DELETE", "/openApi/swap/v2/trade/order", params, signed=True)
+        return await self._request(
+            "DELETE", "/openApi/swap/v2/trade/order", params, signed=True
+        )
 
     # === Account (Signed) ===
     async def get_balance(self) -> Dict[str, Any]:
         """Fetch account balance."""
-        result = await self._request("GET", "/openApi/swap/v2/user/balance", {}, signed=True)
+        result = await self._request(
+            "GET", "/openApi/swap/v2/user/balance", {}, signed=True
+        )
 
         if "error" in result:
             return result
@@ -152,7 +168,9 @@ class BingXClient(BaseExchangeClient):
 
     async def get_positions(self) -> Optional[List[Dict[str, Any]]]:
         """Fetch open positions."""
-        result = await self._request("GET", "/openApi/swap/v2/user/positions", {}, signed=True)
+        result = await self._request(
+            "GET", "/openApi/swap/v2/user/positions", {}, signed=True
+        )
 
         if "error" in result:
             logger.error(f"Failed to fetch positions: {result['error']}")
@@ -168,20 +186,28 @@ class BingXClient(BaseExchangeClient):
             if size == 0:
                 continue
 
-            positions.append({
-                "symbol": pos.get("symbol", ""),
-                "side": "LONG" if size > 0 else "SHORT",
-                "size": abs(size),
-                "entry_price": float(pos.get("avgPrice", 0) or pos.get("entryPrice", 0) or 0),
-                "leverage": int(pos.get("leverage", 1) or 1),
-                "unrealized_pnl": float(pos.get("unrealizedProfit", 0) or 0),
-                "order_id": pos.get("positionId", ""),
-            })
+            positions.append(
+                {
+                    "symbol": pos.get("symbol", ""),
+                    "side": "LONG" if size > 0 else "SHORT",
+                    "size": abs(size),
+                    "entry_price": float(
+                        pos.get("avgPrice", 0) or pos.get("entryPrice", 0) or 0
+                    ),
+                    "leverage": int(pos.get("leverage", 1) or 1),
+                    "unrealized_pnl": float(pos.get("unrealizedProfit", 0) or 0),
+                    "order_id": pos.get("positionId", ""),
+                }
+            )
 
         return positions
 
-    async def get_income(self, start_time: Optional[int] = None,
-                         end_time: Optional[int] = None, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_income(
+        self,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
         """
         Fetch income history (for PnL calculation).
         Includes: REALIZED_PNL, FUNDING_FEE, COMMISSION
@@ -192,7 +218,9 @@ class BingXClient(BaseExchangeClient):
         if end_time:
             params["endTime"] = end_time
 
-        result = await self._request("GET", "/openApi/swap/v2/user/income", params, signed=True)
+        result = await self._request(
+            "GET", "/openApi/swap/v2/user/income", params, signed=True
+        )
 
         if "error" in result:
             return []

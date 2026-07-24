@@ -23,8 +23,7 @@ class AuthService:
         self.access_token_expiry = timedelta(minutes=15)
         self.refresh_token_expiry = timedelta(days=7)
 
-    def register(self, username: str, email: str,
-                 password: str) -> Tuple[bool, str]:
+    def register(self, username: str, email: str, password: str) -> Tuple[bool, str]:
         """Register new user."""
         if User.query.filter_by(username=username).first():
             return False, "Username already exists"
@@ -39,7 +38,9 @@ class AuthService:
 
         return True, "User registered successfully"
 
-    def login(self, username: str, password: str) -> Tuple[Optional[User], Optional[Dict]]:
+    def login(
+        self, username: str, password: str
+    ) -> Tuple[Optional[User], Optional[Dict]]:
         """Authenticate user and generate tokens."""
         user = User.query.filter_by(username=username).first()
 
@@ -55,10 +56,7 @@ class AuthService:
     def refresh_access_token(self, refresh_token: str) -> Optional[Dict]:
         """Generate new access token from refresh token."""
         try:
-            payload = jwt.decode(
-                refresh_token, self.secret_key,
-                algorithms=["HS256"]
-            )
+            payload = jwt.decode(refresh_token, self.secret_key, algorithms=["HS256"])
             user_id = payload.get("user_id")
             token_type = payload.get("type")
 
@@ -155,6 +153,7 @@ class AuthService:
 
 def require_auth(f):
     """Decorator to require authentication."""
+
     @wraps(f)
     def decorated(*args, **kwargs):
         from flask import request, jsonify
@@ -174,4 +173,5 @@ def require_auth(f):
             return jsonify({"error": "User not found"}), 401
 
         return f(*args, **kwargs)
+
     return decorated

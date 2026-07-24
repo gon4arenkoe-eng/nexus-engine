@@ -5,6 +5,7 @@ from typing import Dict, Any
 from strategies.base import BaseStrategy
 from utils.indicators import Indicators
 
+
 class StatisticalArbitrageStrategy(BaseStrategy):
     """
     Statistical Arbitrage (Pairs Trading) strategy using Z-Score.
@@ -18,21 +19,31 @@ class StatisticalArbitrageStrategy(BaseStrategy):
 
     description = "Statistical Arbitrage (Pairs Trading)"
 
-    def __init__(self, z_score_period: int = 60, entry_threshold: float = 2.0, exit_threshold: float = 0.5):
+    def __init__(
+        self,
+        z_score_period: int = 60,
+        entry_threshold: float = 2.0,
+        exit_threshold: float = 0.5,
+    ):
         self.z_score_period = z_score_period
         self.entry_threshold = entry_threshold
         self.exit_threshold = exit_threshold
 
-    def analyze(self, data_a: pd.DataFrame, data_b: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def analyze(
+        self, data_a: pd.DataFrame, data_b: pd.DataFrame, **kwargs
+    ) -> Dict[str, Any]:
         # For statistical arbitrage, we need data for two symbols
-        if not self._validate_data(data_a, min_rows=self.z_score_period + 2) or \
-           not self._validate_data(data_b, min_rows=self.z_score_period + 2):
+        if not self._validate_data(
+            data_a, min_rows=self.z_score_period + 2
+        ) or not self._validate_data(data_b, min_rows=self.z_score_period + 2):
             return self._neutral("Insufficient data for pair trading", self.description)
 
         # Ensure dataframes are aligned by index (time)
         common_index = data_a.index.intersection(data_b.index)
         if len(common_index) < self.z_score_period + 2:
-            return self._neutral("Insufficient common data for pair trading", self.description)
+            return self._neutral(
+                "Insufficient common data for pair trading", self.description
+            )
 
         df_a = data_a.loc[common_index].copy()
         df_b = data_b.loc[common_index].copy()
@@ -49,12 +60,18 @@ class StatisticalArbitrageStrategy(BaseStrategy):
         reason = ""
 
         # Entry signals
-        if current_z_score < -self.entry_threshold and previous_z_score >= -self.entry_threshold:
-            signal = "BUY_A_SELL_B" # Pair is oversold, buy A, sell B
+        if (
+            current_z_score < -self.entry_threshold
+            and previous_z_score >= -self.entry_threshold
+        ):
+            signal = "BUY_A_SELL_B"  # Pair is oversold, buy A, sell B
             confidence = 80
             reason = f"Z-Score ({current_z_score:.2f}) crossed below -{self.entry_threshold} (oversold)"
-        elif current_z_score > self.entry_threshold and previous_z_score <= self.entry_threshold:
-            signal = "SELL_A_BUY_B" # Pair is overbought, sell A, buy B
+        elif (
+            current_z_score > self.entry_threshold
+            and previous_z_score <= self.entry_threshold
+        ):
+            signal = "SELL_A_BUY_B"  # Pair is overbought, sell A, buy B
             confidence = 80
             reason = f"Z-Score ({current_z_score:.2f}) crossed above {self.entry_threshold} (overbought)"
 
@@ -75,13 +92,28 @@ class StatisticalArbitrageStrategy(BaseStrategy):
                 "current_z_score": float(current_z_score),
                 "current_price_a": float(df_a["close"].iloc[-1]),
                 "current_price_b": float(df_b["close"].iloc[-1]),
-                "reason": reason
-            }
+                "reason": reason,
+            },
         }
 
     def get_parameters(self) -> Dict[str, Any]:
         return {
-            "z_score_period": {"value": self.z_score_period, "type": "int", "min": 30, "max": 120},
-            "entry_threshold": {"value": self.entry_threshold, "type": "float", "min": 1.0, "max": 3.0},
-            "exit_threshold": {"value": self.exit_threshold, "type": "float", "min": 0.1, "max": 1.0},
+            "z_score_period": {
+                "value": self.z_score_period,
+                "type": "int",
+                "min": 30,
+                "max": 120,
+            },
+            "entry_threshold": {
+                "value": self.entry_threshold,
+                "type": "float",
+                "min": 1.0,
+                "max": 3.0,
+            },
+            "exit_threshold": {
+                "value": self.exit_threshold,
+                "type": "float",
+                "min": 0.1,
+                "max": 1.0,
+            },
         }

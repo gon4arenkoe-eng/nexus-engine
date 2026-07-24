@@ -23,8 +23,13 @@ class RiskAgent(BaseAgent):
         self._daily_pnl_cache: Dict[int, Decimal] = {}
         self._last_pnl_update: Dict[int, datetime] = {}
 
-    def run(self, signal: Dict[str, Any], user_id: int,
-            balance: float = 0, open_positions: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    def run(
+        self,
+        signal: Dict[str, Any],
+        user_id: int,
+        balance: float = 0,
+        open_positions: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
         """Evaluate signal against risk rules."""
         try:
             settings = BotSettings.query.filter_by(user_id=user_id).first()
@@ -41,8 +46,9 @@ class RiskAgent(BaseAgent):
 
             # Check 2: Duplicate position
             for pos in current_positions:
-                if (pos["symbol"] == symbol and
-                        pos["side"] == ("LONG" if side == "BUY" else "SHORT")):
+                if pos["symbol"] == symbol and pos["side"] == (
+                    "LONG" if side == "BUY" else "SHORT"
+                ):
                     return self._reject(f"Position already exists: {symbol} {side}")
 
             # Check 3: Daily loss limit
@@ -109,13 +115,11 @@ class RiskAgent(BaseAgent):
 
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         trades = TradeHistory.query.filter(
-            TradeHistory.user_id == user_id,
-            TradeHistory.executed_at >= today
+            TradeHistory.user_id == user_id, TradeHistory.executed_at >= today
         ).all()
 
         total_pnl = sum(
-            (t.pnl or 0) + (t.commission or 0) + (t.funding_fee or 0)
-            for t in trades
+            (t.pnl or 0) + (t.commission or 0) + (t.funding_fee or 0) for t in trades
         )
         self._daily_pnl_cache[user_id] = Decimal(str(total_pnl))
         self._last_pnl_update[user_id] = now

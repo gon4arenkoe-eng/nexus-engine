@@ -21,8 +21,9 @@ class PositionAgent(BaseAgent):
     def __init__(self):
         super().__init__("position")
 
-    async def run(self, user_id: int, exchange_id: int,
-                  client: Optional[BaseExchangeClient]) -> List[Dict[str, Any]]:
+    async def run(
+        self, user_id: int, exchange_id: int, client: Optional[BaseExchangeClient]
+    ) -> List[Dict[str, Any]]:
         """Sync positions with exchange and return current positions."""
         try:
             if client:
@@ -44,18 +45,16 @@ class PositionAgent(BaseAgent):
             self._handle_error(e)
             return self._get_local_positions(user_id)
 
-    def _sync_position(self, user_id: int, exchange_id: int,
-                       pos_data: Dict[str, Any]) -> Optional[Position]:
+    def _sync_position(
+        self, user_id: int, exchange_id: int, pos_data: Dict[str, Any]
+    ) -> Optional[Position]:
         """Sync single position with database."""
         symbol = pos_data.get("symbol")
         if not symbol:
             return None
 
         position = Position.query.filter_by(
-            user_id=user_id,
-            exchange_id=exchange_id,
-            symbol=symbol,
-            status="OPEN"
+            user_id=user_id, exchange_id=exchange_id, symbol=symbol, status="OPEN"
         ).first()
 
         if position:
@@ -75,6 +74,7 @@ class PositionAgent(BaseAgent):
                     exchange_order_id=pos_data.get("order_id"),
                 )
                 from app import db
+
                 db.session.add(position)
                 db.session.commit()
 
@@ -85,8 +85,9 @@ class PositionAgent(BaseAgent):
         positions = Position.query.filter_by(user_id=user_id, status="OPEN").all()
         return [p.to_dict() for p in positions]
 
-    def update_unrealized_pnl(self, position_id: int,
-                              current_price: float) -> Optional[Decimal]:
+    def update_unrealized_pnl(
+        self, position_id: int, current_price: float
+    ) -> Optional[Decimal]:
         """Update unrealized PnL for a position."""
         try:
             position = Position.query.get(position_id)
@@ -103,6 +104,7 @@ class PositionAgent(BaseAgent):
 
             position.unrealized_pnl = Decimal(str(pnl))
             from app import db
+
             db.session.commit()
 
             return position.unrealized_pnl

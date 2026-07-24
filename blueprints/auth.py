@@ -1,9 +1,9 @@
 """Auth blueprint with rate limiting."""
+
 import os
 from flask import Blueprint, request, jsonify, make_response
 from services.auth_service import AuthService, require_auth
 from app import limiter
-
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -53,10 +53,14 @@ def login():
     if not user:
         return jsonify({"error": "Invalid credentials"}), 401
 
-    response = make_response(jsonify({
-        "message": "Login successful",
-        "user": user.to_dict(),
-    }))
+    response = make_response(
+        jsonify(
+            {
+                "message": "Login successful",
+                "user": user.to_dict(),
+            }
+        )
+    )
 
     auth_service.set_auth_cookies(response, tokens)
     return response, 200

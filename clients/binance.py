@@ -27,7 +27,9 @@ class BinanceClient(BaseExchangeClient):
             return "https://testnet.binancefuture.com"
         return "https://fapi.binance.com"
 
-    def _sign_request(self, method: str, endpoint: str, params: Dict[str, Any]) -> Dict[str, str]:
+    def _sign_request(
+        self, method: str, endpoint: str, params: Dict[str, Any]
+    ) -> Dict[str, str]:
         """Generate Binance signature."""
         timestamp = str(int(time.time() * 1000))
         params = params.copy()
@@ -37,7 +39,7 @@ class BinanceClient(BaseExchangeClient):
         signature = hmac.new(
             self.api_secret.encode("utf-8"),
             query_string.encode("utf-8"),
-            hashlib.sha256
+            hashlib.sha256,
         ).hexdigest()
 
         params["signature"] = signature
@@ -46,7 +48,9 @@ class BinanceClient(BaseExchangeClient):
             "X-MBX-APIKEY": self.api_key,
         }
 
-    async def get_klines(self, symbol: str, interval: str, limit: int = 100) -> List[List]:
+    async def get_klines(
+        self, symbol: str, interval: str, limit: int = 100
+    ) -> List[List]:
         params = {
             "symbol": symbol,
             "interval": interval,
@@ -70,9 +74,15 @@ class BinanceClient(BaseExchangeClient):
             }
         return result if isinstance(result, dict) else {"error": "Invalid response"}
 
-    async def place_order(self, symbol: str, side: str, size: float,
-                          order_type: str = "MARKET", price: Optional[float] = None,
-                          leverage: int = 1) -> Dict[str, Any]:
+    async def place_order(
+        self,
+        symbol: str,
+        side: str,
+        size: float,
+        order_type: str = "MARKET",
+        price: Optional[float] = None,
+        leverage: int = 1,
+    ) -> Dict[str, Any]:
         params = {
             "symbol": symbol,
             "side": side.upper(),
@@ -126,15 +136,17 @@ class BinanceClient(BaseExchangeClient):
                 if size == 0:
                     continue
 
-                positions.append({
-                    "symbol": pos.get("symbol", ""),
-                    "side": "LONG" if size > 0 else "SHORT",
-                    "size": abs(size),
-                    "entry_price": float(pos.get("entryPrice", 0) or 0),
-                    "leverage": int(pos.get("leverage", 1) or 1),
-                    "unrealized_pnl": float(pos.get("unRealizedProfit", 0) or 0),
-                    "order_id": pos.get("positionId", ""),
-                })
+                positions.append(
+                    {
+                        "symbol": pos.get("symbol", ""),
+                        "side": "LONG" if size > 0 else "SHORT",
+                        "size": abs(size),
+                        "entry_price": float(pos.get("entryPrice", 0) or 0),
+                        "leverage": int(pos.get("leverage", 1) or 1),
+                        "unrealized_pnl": float(pos.get("unRealizedProfit", 0) or 0),
+                        "order_id": pos.get("positionId", ""),
+                    }
+                )
             return positions
 
         logger.error(f"Failed to fetch positions: {result}")

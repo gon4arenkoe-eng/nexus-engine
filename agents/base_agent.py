@@ -1,5 +1,6 @@
 from typing import Dict, Any
 
+
 class BaseAgent:
     """Base class for all agents in the NEXUS Swarm architecture."""
 

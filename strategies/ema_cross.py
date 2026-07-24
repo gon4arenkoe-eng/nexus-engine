@@ -25,14 +25,22 @@ class EmaCrossStrategy(BaseStrategy):
 
     description = "EMA Crossover with ADX trend filter"
 
-    def __init__(self, fast_ema: int = 12, slow_ema: int = 26, adx_period: int = 14, adx_threshold: int = 20):
+    def __init__(
+        self,
+        fast_ema: int = 12,
+        slow_ema: int = 26,
+        adx_period: int = 14,
+        adx_threshold: int = 20,
+    ):
         self.fast_ema = fast_ema
         self.slow_ema = slow_ema
         self.adx_period = adx_period
         self.adx_threshold = adx_threshold
 
     def analyze(self, data: pd.DataFrame) -> Dict[str, Any]:
-        if not self._validate_data(data, min_rows=max(self.slow_ema, self.adx_period) + 10):
+        if not self._validate_data(
+            data, min_rows=max(self.slow_ema, self.adx_period) + 10
+        ):
             return self._neutral("Insufficient data")
 
         df = data.copy()
@@ -82,8 +90,8 @@ class EmaCrossStrategy(BaseStrategy):
                 "levels": {
                     "sl_pct": 0.02,
                     "tp_pct": 0.04,
-                }
-            }
+                },
+            },
         }
 
     def _calculate_adx(self, df: pd.DataFrame, period: int) -> pd.DataFrame:
@@ -98,16 +106,26 @@ class EmaCrossStrategy(BaseStrategy):
         df["dm_plus"] = df["high"] - df["high"].shift(1)
         df["dm_minus"] = df["low"].shift(1) - df["low"]
 
-        df["dm_plus"] = np.where((df["dm_plus"] > df["dm_minus"]) & (df["dm_plus"] > 0), df["dm_plus"], 0)
-        df["dm_minus"] = np.where((df["dm_minus"] > df["dm_plus"]) & (df["dm_minus"] > 0), df["dm_minus"], 0)
+        df["dm_plus"] = np.where(
+            (df["dm_plus"] > df["dm_minus"]) & (df["dm_plus"] > 0), df["dm_plus"], 0
+        )
+        df["dm_minus"] = np.where(
+            (df["dm_minus"] > df["dm_plus"]) & (df["dm_minus"] > 0), df["dm_minus"], 0
+        )
 
         # Smoothed averages
         df["atr"] = df["tr"].ewm(span=period, adjust=False).mean()
-        df["di_plus"] = 100 * (df["dm_plus"].ewm(span=period, adjust=False).mean() / df["atr"])
-        df["di_minus"] = 100 * (df["dm_minus"].ewm(span=period, adjust=False).mean() / df["atr"])
+        df["di_plus"] = 100 * (
+            df["dm_plus"].ewm(span=period, adjust=False).mean() / df["atr"]
+        )
+        df["di_minus"] = 100 * (
+            df["dm_minus"].ewm(span=period, adjust=False).mean() / df["atr"]
+        )
 
         # ADX
-        df["dx"] = 100 * abs(df["di_plus"] - df["di_minus"]) / (df["di_plus"] + df["di_minus"])
+        df["dx"] = (
+            100 * abs(df["di_plus"] - df["di_minus"]) / (df["di_plus"] + df["di_minus"])
+        )
         df["adx"] = df["dx"].ewm(span=period, adjust=False).mean()
 
         return df
@@ -124,6 +142,16 @@ class EmaCrossStrategy(BaseStrategy):
         return {
             "fast_ema": {"value": self.fast_ema, "type": "int", "min": 5, "max": 50},
             "slow_ema": {"value": self.slow_ema, "type": "int", "min": 10, "max": 100},
-            "adx_period": {"value": self.adx_period, "type": "int", "min": 7, "max": 30},
-            "adx_threshold": {"value": self.adx_threshold, "type": "int", "min": 10, "max": 50},
+            "adx_period": {
+                "value": self.adx_period,
+                "type": "int",
+                "min": 7,
+                "max": 30,
+            },
+            "adx_threshold": {
+                "value": self.adx_threshold,
+                "type": "int",
+                "min": 10,
+                "max": 50,
+            },
         }

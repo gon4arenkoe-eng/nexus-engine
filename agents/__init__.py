@@ -1,4 +1,5 @@
 """NEXUS Swarm Agents package."""
+
 from .base_agent import BaseAgent
 from .config_agent import ConfigAgent
 from .market_agent import MarketAgent

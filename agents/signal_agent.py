@@ -11,6 +11,7 @@ from nexus_bus import get_bus
 
 logger = logging.getLogger(__name__)
 
+
 class SignalAgent(BaseAgent):
     """
     Agent responsible for generating trading signals based on market data and selected strategy.
@@ -35,7 +36,14 @@ class SignalAgent(BaseAgent):
             self.market_regimes[symbol] = regime
             logger.debug(f"SignalAgent: Updated market regime for {symbol} to {regime}")
 
-    async def run(self, symbol: str, data: pd.DataFrame, pair_data: Optional[Dict[str, pd.DataFrame]] = None, strategy_name: Optional[str] = None, confidence_threshold: int = 50) -> Dict[str, Any]:
+    async def run(
+        self,
+        symbol: str,
+        data: pd.DataFrame,
+        pair_data: Optional[Dict[str, pd.DataFrame]] = None,
+        strategy_name: Optional[str] = None,
+        confidence_threshold: int = 50,
+    ) -> Dict[str, Any]:
         current_regime = self.market_regimes.get(symbol, "NEUTRAL")
         selected_strategy_name = strategy_name
 
@@ -48,25 +56,34 @@ class SignalAgent(BaseAgent):
                 if pair_data and len(pair_data) == 2:
                     selected_strategy_name = "statistical_arbitrage"
                 else:
-                    logger.warning(f"SignalAgent: RANGING regime detected for {symbol}, but no pair data for statistical arbitrage. Falling back to EMA Cross.")
-                    selected_strategy_name = "ema_cross" # Fallback
+                    logger.warning(
+                        f"SignalAgent: RANGING regime detected for {symbol}, but no pair data for statistical arbitrage. Falling back to EMA Cross."
+                    )
+                    selected_strategy_name = "ema_cross"  # Fallback
             elif current_regime == "VOLATILE_SQUEEZE":
                 selected_strategy_name = "bollinger_squeeze"
             else:
-                selected_strategy_name = "ema_cross" # Default fallback
+                selected_strategy_name = "ema_cross"  # Default fallback
 
         strategy = self.strategies.get(selected_strategy_name)
         if not strategy:
             logger.error(f"SignalAgent: Strategy '{selected_strategy_name}' not found.")
             return self._neutral_signal(symbol, "Strategy not found")
 
-        logger.info(f"SignalAgent: Analyzing {symbol} with {selected_strategy_name} in {current_regime} regime.")
+        logger.info(
+            f"SignalAgent: Analyzing {symbol} with {selected_strategy_name} in {current_regime} regime."
+        )
 
         # Special handling for statistical arbitrage which requires two dataframes
         if selected_strategy_name == "statistical_arbitrage" and pair_data:
             symbol_a = list(pair_data.keys())[0]
             symbol_b = list(pair_data.keys())[1]
-            signal_result = strategy.analyze(pair_data[symbol_a], pair_data[symbol_b], symbol_a=symbol_a, symbol_b=symbol_b)
+            signal_result = strategy.analyze(
+                pair_data[symbol_a],
+                pair_data[symbol_b],
+                symbol_a=symbol_a,
+                symbol_b=symbol_b,
+            )
         else:
             signal_result = strategy.analyze(data, symbol=symbol)
 
@@ -74,7 +91,10 @@ class SignalAgent(BaseAgent):
             self.bus.publish("signal.generated", signal_result)
             return signal_result
         else:
-            return self._neutral_signal(symbol, f"Confidence below threshold ({signal_result["confidence"]} < {confidence_threshold})")
+            return self._neutral_signal(
+                symbol,
+                f"Confidence below threshold ({signal_result["confidence"]} < {confidence_threshold})",
+            )
 
     def _neutral_signal(self, symbol: str, reason: str) -> Dict[str, Any]:
         return {

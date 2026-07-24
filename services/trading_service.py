@@ -13,12 +13,13 @@ from agents.pnl_agent import PnLAgent
 from agents.ml_agent import MLAgent
 from agents.sentiment_agent import SentimentAgent
 from agents.notification_agent import NotificationAgent
-from agents.market_regime_agent import MarketRegimeAgent # New import
+from agents.market_regime_agent import MarketRegimeAgent  # New import
 
 from services.exchange_service import ExchangeService
 from models import BotSettings
 
 logger = logging.getLogger(__name__)
+
 
 class TradingService:
     """Orchestrates complete trading cycle."""
@@ -35,7 +36,7 @@ class TradingService:
         self.sentiment_agent = SentimentAgent()
         self.notification_agent = NotificationAgent()
         self.exchange_service = ExchangeService()
-        self.market_regime_agent = MarketRegimeAgent() # Initialize new agent
+        self.market_regime_agent = MarketRegimeAgent()  # Initialize new agent
 
     async def run_cycle(self, user_id: int, exchange_id: int) -> Dict[str, Any]:
         """Execute one trading cycle."""
@@ -52,16 +53,13 @@ class TradingService:
             config_raw = self.config_agent.run(user_id)
             config = cast(Dict[str, Any], config_raw)
             steps = cast(Dict[str, Any], results["steps"])
-            steps["config"] = {
-                "status": "ok",
-                "symbols": config.get("symbols", [])
-            }
+            steps["config"] = {"status": "ok", "symbols": config.get("symbols", [])}
 
             client = await self.exchange_service.get_client(exchange_id)
             if not client:
                 steps["exchange"] = {
                     "status": "error",
-                    "message": "Failed to initialize client"
+                    "message": "Failed to initialize client",
                 }
                 return results
 
@@ -69,8 +67,7 @@ class TradingService:
             timeframe = config.get("timeframe", "4h")
 
             market_tasks = [
-                self.market_agent.run(symbol, timeframe)
-                for symbol in symbols
+                self.market_agent.run(symbol, timeframe) for symbol in symbols
             ]
             market_data_list = await asyncio.gather(
                 *market_tasks, return_exceptions=True
@@ -79,8 +76,14 @@ class TradingService:
             signals_executed: list[Dict[str, Any]] = []
             for i, symbol in enumerate(symbols):
                 market_data = market_data_list[i]
-                if isinstance(market_data, Exception) or market_data is None or market_data.empty:
-                    logger.warning(f"TradingService: Skipping {symbol} due to missing or erroneous market data.")
+                if (
+                    isinstance(market_data, Exception)
+                    or market_data is None
+                    or market_data.empty
+                ):
+                    logger.warning(
+                        f"TradingService: Skipping {symbol} due to missing or erroneous market data."
+                    )
                     continue
 
                 # Run MarketRegimeAgent for each symbol
@@ -90,10 +93,10 @@ class TradingService:
                 signal = await self.signal_agent.run(
                     symbol,
                     market_data,
-                    strategy_name=config.get("strategy"), # Let SignalAgent decide based on regime
-                    confidence_threshold=config.get(
-                        "confidence_threshold", 50
-                    )
+                    strategy_name=config.get(
+                        "strategy"
+                    ),  # Let SignalAgent decide based on regime
+                    confidence_threshold=config.get("confidence_threshold", 50),
                 )
 
                 if not signal or signal["signal"] == "NEUTRAL":
@@ -108,24 +111,25 @@ class TradingService:
                     if sentiment and sentiment.get("fear_greed_index", 50) < 20:
                         continue
 
-                positions = await self.position_agent.run(
-                    user_id, exchange_id, client
-                )
+                positions = await self.position_agent.run(user_id, exchange_id, client)
                 balance = await client.get_balance()
-                usdt_balance = balance.get("USDT", 0) if isinstance(balance, dict) else 0
+                usdt_balance = (
+                    balance.get("USDT", 0) if isinstance(balance, dict) else 0
+                )
 
                 risk_result = self.risk_agent.run(
-                    signal, user_id, balance=usdt_balance,
-                    open_positions=positions
+                    signal, user_id, balance=usdt_balance, open_positions=positions
                 )
 
                 if not risk_result.get("approved"):
-                    signals_executed.append({
-                        "symbol": symbol,
-                        "signal": signal["signal"],
-                        "status": "rejected",
-                        "reason": risk_result.get("reason")
-                    })
+                    signals_executed.append(
+                        {
+                            "symbol": symbol,
+                            "signal": signal["signal"],
+                            "status": "rejected",
+                            "reason": risk_result.get("reason"),
+                        }
+                    )
                     continue
 
                 order = await self.execution_agent.run(
@@ -133,37 +137,34 @@ class TradingService:
                 )
 
                 if order:
-                    signals_executed.append({
-                        "symbol": symbol,
-                        "signal": signal["signal"],
-                        "status": "executed",
-                        "order_id": order.get("order_id")
-                    })
+                    signals_executed.append(
+                        {
+                            "symbol": symbol,
+                            "signal": signal["signal"],
+                            "status": "executed",
+                            "order_id": order.get("order_id"),
+                        }
+                    )
 
                     await self.notification_agent.send_trade_notification(
                         user_id=user_id,
                         symbol=symbol,
                         side=signal["signal"],
                         size=order.get("size", 0),
-                        price=order.get("price", 0)
+                        price=order.get("price", 0),
                     )
 
             steps["signals"] = {
                 "status": "ok",
                 "count": len(signals_executed),
-                "executed": signals_executed
+                "executed": signals_executed,
             }
 
-            positions = await self.position_agent.run(
-                user_id, exchange_id, client
-            )
+            positions = await self.position_agent.run(user_id, exchange_id, client)
             pnl = self.pnl_agent.run(user_id, positions)
 
             steps["positions"] = {"status": "ok", "count": len(positions)}
-            steps["pnl"] = {
-                "status": "ok",
-                "daily_pnl": float(pnl) if pnl else 0
-            }
+            steps["pnl"] = {"status": "ok", "daily_pnl": float(pnl) if pnl else 0}
             results["success"] = True
 
         except Exception as e:
@@ -181,6 +182,7 @@ class TradingService:
         settings.is_running = True
         settings.started_at = datetime.utcnow()
         from app import db
+
         db.session.commit()
         return True
 
@@ -192,6 +194,7 @@ class TradingService:
         settings.is_running = False
         settings.stopped_at = datetime.utcnow()
         from app import db
+
         db.session.commit()
         return True
 
@@ -211,7 +214,9 @@ class TradingService:
 
         return {
             "is_running": settings.is_running,
-            "started_at": settings.started_at.isoformat() if settings.started_at else None,
+            "started_at": (
+                settings.started_at.isoformat() if settings.started_at else None
+            ),
             "strategy": settings.strategy,
             "symbols": settings.get_symbols_list(),
             "agents_health": agents_health,

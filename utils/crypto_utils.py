@@ -77,5 +77,7 @@ def init_crypto_manager(master_key: str) -> None:
 def get_crypto_manager() -> CryptoManager:
     """Get initialized crypto manager."""
     if _crypto_manager is None:
-        raise RuntimeError("CryptoManager not initialized. Call init_crypto_manager() first.")
+        raise RuntimeError(
+            "CryptoManager not initialized. Call init_crypto_manager() first."
+        )
     return _crypto_manager

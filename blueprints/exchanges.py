@@ -1,9 +1,9 @@
 """Exchanges blueprint."""
+
 import asyncio
 from flask import Blueprint, request, jsonify
 from services.auth_service import require_auth
 from services.exchange_service import ExchangeService
-
 
 exchanges_bp = Blueprint("exchanges", __name__)
 exchange_service = ExchangeService()
@@ -34,17 +34,25 @@ def add_exchange():
 
     result = exchange_service.add_exchange(
         user_id=request.current_user.id,
-        name=name, api_key=api_key, api_secret=api_secret,
-        passphrase=passphrase, is_demo=is_demo,
+        name=name,
+        api_key=api_key,
+        api_secret=api_secret,
+        passphrase=passphrase,
+        is_demo=is_demo,
     )
 
     if not result["success"]:
         return jsonify({"error": result["error"]}), 400
 
-    return jsonify({
-        "message": "Exchange added successfully",
-        "exchange_id": result["exchange_id"],
-    }), 201
+    return (
+        jsonify(
+            {
+                "message": "Exchange added successfully",
+                "exchange_id": result["exchange_id"],
+            }
+        ),
+        201,
+    )
 
 
 @exchanges_bp.route("/<int:exchange_id>/test", methods=["POST"])
@@ -56,10 +64,12 @@ def test_exchange(exchange_id):
     if not result["success"]:
         return jsonify({"error": result["error"]}), 400
 
-    return jsonify({
-        "message": "Connection successful",
-        "balance": result["balance"],
-    })
+    return jsonify(
+        {
+            "message": "Connection successful",
+            "balance": result["balance"],
+        }
+    )
 
 
 @exchanges_bp.route("/<int:exchange_id>/toggle", methods=["POST"])

@@ -81,7 +81,10 @@ class Orchestrator(BaseAgent):
             # Step 2: Get exchange client
             client = await self.exchange_service.get_client(exchange_id)
             if not client:
-                steps["exchange"] = {"status": "error", "message": "Failed to initialize client"}
+                steps["exchange"] = {
+                    "status": "error",
+                    "message": "Failed to initialize client",
+                }
                 return results
 
             # Step 3: Fetch market data
@@ -92,7 +95,9 @@ class Orchestrator(BaseAgent):
                 self.agents["market"].run(symbol, timeframe, exchange="bingx")
                 for symbol in symbols
             ]
-            market_data_list = await asyncio.gather(*market_tasks, return_exceptions=True)
+            market_data_list = await asyncio.gather(
+                *market_tasks, return_exceptions=True
+            )
 
             # Step 4: Process signals
             signals_executed: list[Dict[str, Any]] = []
@@ -103,7 +108,7 @@ class Orchestrator(BaseAgent):
                 signal = self.agents["signal"].run(
                     market_data,
                     strategy_name=config.get("strategy", "ema_cross"),
-                    confidence_threshold=config.get("confidence_threshold", 50)
+                    confidence_threshold=config.get("confidence_threshold", 50),
                 )
 
                 if not signal or signal["signal"] == "NEUTRAL":
@@ -115,21 +120,27 @@ class Orchestrator(BaseAgent):
                         continue
 
                 # Risk check
-                positions = await self.agents["position"].run(user_id, exchange_id, client)
+                positions = await self.agents["position"].run(
+                    user_id, exchange_id, client
+                )
                 balance = await client.get_balance()
-                usdt_balance = balance.get("USDT", 0) if isinstance(balance, dict) else 0
+                usdt_balance = (
+                    balance.get("USDT", 0) if isinstance(balance, dict) else 0
+                )
 
                 risk_result = self.agents["risk"].run(
                     signal, user_id, balance=usdt_balance, open_positions=positions
                 )
 
                 if not risk_result.get("approved"):
-                    signals_executed.append({
-                        "symbol": symbol,
-                        "signal": signal["signal"],
-                        "status": "rejected",
-                        "reason": risk_result.get("reason")
-                    })
+                    signals_executed.append(
+                        {
+                            "symbol": symbol,
+                            "signal": signal["signal"],
+                            "status": "rejected",
+                            "reason": risk_result.get("reason"),
+                        }
+                    )
                     continue
 
                 # Execute
@@ -138,27 +149,29 @@ class Orchestrator(BaseAgent):
                 )
 
                 if order:
-                    signals_executed.append({
-                        "symbol": symbol,
-                        "signal": signal["signal"],
-                        "status": "executed",
-                        "order_id": order.get("order_id")
-                    })
+                    signals_executed.append(
+                        {
+                            "symbol": symbol,
+                            "signal": signal["signal"],
+                            "status": "executed",
+                            "order_id": order.get("order_id"),
+                        }
+                    )
 
                     notification_agent = self.agents["notification"]
-                    if hasattr(notification_agent, 'send_trade_notification'):
+                    if hasattr(notification_agent, "send_trade_notification"):
                         await notification_agent.send_trade_notification(
                             user_id=user_id,
                             symbol=symbol,
                             side=signal["signal"],
                             size=order.get("size", 0),
-                            price=order.get("price", 0)
+                            price=order.get("price", 0),
                         )
 
             steps["signals"] = {
                 "status": "ok",
                 "count": len(signals_executed),
-                "executed": signals_executed
+                "executed": signals_executed,
             }
 
             # Update positions and PnL

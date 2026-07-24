@@ -30,9 +30,15 @@ class ExecutionAgent(BaseAgent):
     def __init__(self):
         super().__init__("execution")
 
-    async def run(self, signal: Dict[str, Any], risk_result: Dict[str, Any],
-                  user_id: int, exchange_id: int, client: BaseExchangeClient,
-                  symbol: str) -> Optional[Dict[str, Any]]:
+    async def run(
+        self,
+        signal: Dict[str, Any],
+        risk_result: Dict[str, Any],
+        user_id: int,
+        exchange_id: int,
+        client: BaseExchangeClient,
+        symbol: str,
+    ) -> Optional[Dict[str, Any]]:
         """
         Execute order based on approved signal.
 
@@ -154,8 +160,9 @@ class ExecutionAgent(BaseAgent):
             db.session.rollback()
             return None
 
-    async def close_position(self, position_id: int, client: BaseExchangeClient,
-                             current_price: float) -> Optional[Dict[str, Any]]:
+    async def close_position(
+        self, position_id: int, client: BaseExchangeClient, current_price: float
+    ) -> Optional[Dict[str, Any]]:
         """Close an open position."""
         try:
             position = Position.query.get(position_id)

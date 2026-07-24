@@ -1,4 +1,5 @@
 """Crypto tests."""
+
 import pytest
 from utils.crypto_utils import CryptoManager
 

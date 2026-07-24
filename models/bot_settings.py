@@ -8,7 +8,9 @@ class BotSettings(db.Model):  # type: ignore[name-defined]
     __tablename__ = "bot_settings"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True
+    )
 
     # Trading parameters
     symbols = db.Column(db.Text, default="BTCUSDT,ETHUSDT")  # Comma-separated
@@ -31,7 +33,9 @@ class BotSettings(db.Model):  # type: ignore[name-defined]
     started_at = db.Column(db.DateTime, nullable=True)
     stopped_at = db.Column(db.DateTime, nullable=True)
 
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     def get_symbols_list(self) -> list:
         return [s.strip() for s in (self.symbols or "").split(",") if s.strip()]
