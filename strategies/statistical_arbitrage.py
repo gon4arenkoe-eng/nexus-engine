@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from strategies.base import BaseStrategy
 from utils.indicators import Indicators
