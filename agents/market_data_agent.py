@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import logging
 from typing import Dict, Any
@@ -26,7 +27,7 @@ class MarketDataAgent(BaseAgent):
             # This part needs actual integration with ExchangeService and a client
             # For demonstration, we'll use dummy data or a simplified fetch
             # Example: klines = await self.exchange_service.fetch_klines(client, symbol, timeframe, limit)
-            
+
             # --- Dummy data generation for demonstration ---
             if symbol not in self.data_cache:
                 self.data_cache[symbol] = pd.DataFrame(columns=['open', 'high', 'low', 'close', 'volume'])
@@ -38,7 +39,7 @@ class MarketDataAgent(BaseAgent):
                 'close': [np.random.rand() * 100 + 100],
                 'volume': [np.random.rand() * 10000]
             }, index=[pd.Timestamp.now()])
-            
+
             self.data_cache[symbol] = pd.concat([self.data_cache[symbol], new_data], ignore_index=True).tail(limit)
             df = self.data_cache[symbol]
             # --- End dummy data generation ---

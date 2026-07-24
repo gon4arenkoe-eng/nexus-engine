@@ -68,7 +68,7 @@ class NexusBus:
             "total_errors": self._error_count,
         }
 
-# Singleton instance
+  # Singleton instance
 _bus: NexusBus | None = None
 
 def get_bus() -> NexusBus:
