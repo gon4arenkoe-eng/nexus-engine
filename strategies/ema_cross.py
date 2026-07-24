@@ -37,7 +37,7 @@ class EmaCrossStrategy(BaseStrategy):
         self.adx_period = adx_period
         self.adx_threshold = adx_threshold
 
-    def analyze(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def analyze(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         if not self._validate_data(
             data, min_rows=max(self.slow_ema, self.adx_period) + 10
         ):

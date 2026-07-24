@@ -93,7 +93,7 @@ class SignalAgent(BaseAgent):
         else:
             return self._neutral_signal(
                 symbol,
-                f"Confidence below threshold ({signal_result["confidence"]} < {confidence_threshold})",
+                f'Confidence below threshold ({signal_result["confidence"]} < {confidence_threshold})',
             )
 
     def _neutral_signal(self, symbol: str, reason: str) -> Dict[str, Any]:

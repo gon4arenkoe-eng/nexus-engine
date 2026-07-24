@@ -26,7 +26,7 @@ class MLAgent(BaseAgent):
         super().__init__("ml")
         self._model_loaded = False
 
-    def run(self, signal: Dict[str, Any], market_data: pd.DataFrame) -> bool:
+    async def run(self, signal: Dict[str, Any], market_data: pd.DataFrame, **kwargs) -> bool:
         """
         Filter signal through ML model.
 

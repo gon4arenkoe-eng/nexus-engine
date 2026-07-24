@@ -79,7 +79,7 @@ class TradingService:
                 if (
                     isinstance(market_data, Exception)
                     or market_data is None
-                    or market_data.empty
+                    or getattr(market_data, "empty", False)
                 ):
                     logger.warning(
                         f"TradingService: Skipping {symbol} due to missing or erroneous market data."

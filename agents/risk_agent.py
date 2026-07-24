@@ -23,7 +23,7 @@ class RiskAgent(BaseAgent):
         self._daily_pnl_cache: Dict[int, Decimal] = {}
         self._last_pnl_update: Dict[int, datetime] = {}
 
-    def run(
+    async def run(
         self,
         signal: Dict[str, Any],
         user_id: int,

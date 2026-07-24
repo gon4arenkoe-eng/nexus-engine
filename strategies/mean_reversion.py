@@ -41,7 +41,7 @@ class MeanReversionStrategy(BaseStrategy):
         self.bb_period = bb_period
         self.bb_std = bb_std
 
-    def analyze(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def analyze(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         if not self._validate_data(data, min_rows=self.bb_period + 10):
             return self._neutral("Insufficient data")
 
